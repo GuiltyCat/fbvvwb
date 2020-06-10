@@ -106,10 +106,11 @@
 #
 # Avairable Query
 # ------
-#
+# ```
 # http://<address>?<query>
 # <query> := <query>&<query>
 # <query> := <key>=<value>
+# ```
 #
 # Query is automatically passed to next page
 # except for some dangerous query like trash.
@@ -121,6 +122,7 @@
 #
 # Query Key List
 #
+# ```
 # cp=<path>
 #    current path. You can set absolute path.
 # 	 For example, cp=/home/bob/
@@ -154,6 +156,7 @@
 #     Otherwise single page.
 # order=<lr or lr>
 #     In dual mode, reading page left to right or right to left.
+# ```
 #
 # _________________________________________
 #
@@ -171,10 +174,12 @@
 #
 # Avairable options are
 #
+# ```
 # - `-h`      : Generate markdown document from this script.
 # = `--generate-readme`
 #             : Generate README.md from `-h` option's output.
 # - otherwise : Ignored.
+# ```
 #
 # If options are set, this script run as non-CGI mode.
 #
@@ -213,7 +218,7 @@ EOF
 # FBVVWB_CONFIG="/home/$(whoami)/.fbvvwb_conf"
 # if [[ ! -f "${FBVVWB_CONFIG}" ]]; then
 # fi
-# ``
+# ```
 #
 
 # ## Prepare files
