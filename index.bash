@@ -24,6 +24,7 @@
 # 	- Archive is suported (.zip .rar .tar.gz ...)
 # 	- Dual page mode is supported.
 # - Watch movies.
+# - Listen musics.
 # - Trash files.
 #
 # This script is supported to work in Local Area Network (LAN).
@@ -642,11 +643,21 @@ function ImageViewer() {
 
 }
 
-function VideoViewer() {
-	echo "$(basename "${CURRENT_PATH}")<br>"
+function VideoPlayer() {
+	echo "$(basename "${QUERY[cp]}")<br>"
 	HEIGHT=300
 	echo "<div style=\"text-align:center\">"
-	echo "<video src=\"$(UrlPath "${CURRENT_PATH}")\" height=\"${HEIGHT}\" controls autoplay align=\"center\"></video>"
+	echo "<video src=\"$(UrlPath "${QUERY[cp]}")\" height=\"${HEIGHT}\" controls autoplay align=\"center\"></video>"
+	echo "</div>"
+	echo "<p>"
+	UpLink
+	echo "</p>"
+}
+
+function AudioPlayer(){
+	echo "$(basename "${QUERY[cp]}")<br>"
+	echo "<div style=\"text-align:center\">"
+	echo "<audio src=\"$(UrlPath "${QUERY[cp]}")\" controls autoplay align=\"center\"></audio>"
 	echo "</div>"
 	echo "<p>"
 	UpLink
@@ -662,13 +673,15 @@ function VideoViewer() {
 
 function FileViewer() {
 	if [[ "${CURRENT_PATH}" =~ .*\.mp4|.*\.avi ]]; then
-		VideoViewer
+		VideoPlayer
 	elif [[ "${CURRENT_PATH}" =~ .*\.zip|.*\.rar|.*\.tar|.*\.tar\..* ]]; then
 		QUERY["mode"]="manga_viewer"
 		ImageViewer
 	elif [[ "${CURRENT_PATH}" =~ .*\.jpg|.*\.png|.*\.jpeg|.*\.gif ]]; then
 		QUERY["mode"]="image_viewer"
 		ImageViewer
+	elif [[ "${CURRENT_PATH}" =~ .*\.mp3|.*\.flag|.*\.wav ]]; then
+		AudioPlayer
 	else
 		echo "Yet implemented to open this file.<br>"
 		echo "${CURRENT_PATH}<br>"
