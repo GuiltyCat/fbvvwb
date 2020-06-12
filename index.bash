@@ -318,6 +318,10 @@ if [[ "${QUERY[page]}" == "" ]] || [[ "${QUERY[page]}" -le 0 ]]; then
 	QUERY["page"]=1
 fi
 
+if [[ "${QUERY[order]}" == "" ]]; then
+	QUERY["order"]="rl"
+fi
+
 CURRENT_PATH=${QUERY[cp]%/}
 
 #
@@ -400,7 +404,8 @@ function FileBrowser() {
 function CreateArcImgIdPath() {
 	if [[ ! -e "${FBVVWB_IMG_LIST}" ]] || [[ $(head -n 1 "${FBVVWB_IMG_LIST}") != "${CURRENT_PATH}" ]]; then
 		echo "${CURRENT_PATH}" >>"${FBVVWB_MANGA_HISTORY}"
-		echo "${CURRENT_PATH}" >"${FBVVWB_IMG_LIST}"
+		echo "unar" >"${FBVVWB_IMG_LIST}"
+		echo "${CURRENT_PATH}" >>"${FBVVWB_IMG_LIST}"
 		lsar "${CURRENT_PATH}" | grep -i -n -e ".jpg" -e ".jpeg" -e ".png" | sort -V -k2 -t ":" >>"${FBVVWB_IMG_LIST}"
 	fi
 }
@@ -417,12 +422,13 @@ function CreateDirImgIdPath() {
 	# echo "<!--C_DIR=${C_DIR}-->"
 	DIR=$(head -n 1 "${FBVVWB_IMG_LIST}")
 	if [[ ! -e "${FBVVWB_IMG_LIST}" ]] || [[ "${DIR}" != "${C_DIR}" ]]; then
-		echo "${C_DIR}" >"${FBVVWB_IMG_LIST}"
+		echo "img" >"${FBVVWB_IMG_LIST}"
+		echo "${C_DIR}" >>"${FBVVWB_IMG_LIST}"
 		find -L "${C_DIR}" -type f -mindepth 1 -maxdepth 1 -not -name ".*" | grep -n -i -e ".jpg" -e ".png" -e ".gif" | sort -V -k2 -t':' >>"${FBVVWB_IMG_LIST}"
 	fi
 	PAGE=$(grep -n "${CURRENT_PATH}" "${FBVVWB_IMG_LIST}" | cut -d':' -f1)
 	# Because, first line is directory name.
-	PAGE=$((PAGE - 1))
+	PAGE=$((PAGE - 2))
 	QUERY["page"]=${PAGE}
 }
 
@@ -440,20 +446,54 @@ function CreateImgIdPath() {
 
 function GetImgListMax() {
 	if [[ ${IMG_MAX} == "" ]]; then
-		IMG_MAX=$(($(wc -l "${FBVVWB_IMG_LIST}" | cut -d' ' -f1) - 1))
+		IMG_MAX=$(($(wc -l "${FBVVWB_IMG_LIST}" | cut -d' ' -f1) - 2))
 	fi
 	echo "${IMG_MAX}"
 }
 
-
-function PrepareImg(){
-	local PAGE=$1
-}
-
 function GetImgIdPath() {
 	local PAGE=$1
-	head -n $((PAGE + 1)) "${FBVVWB_IMG_LIST}" | tail -n 1
+	head -n $((PAGE + 2)) "${FBVVWB_IMG_LIST}" | tail -n 1
 }
+
+function GetImgPath(){
+
+	local PAGE=$1
+	local NUM=$2
+	local CP
+	#echo -n "<!- page=${PAGE}->"
+
+	TARGET="$(head -n 2 "${FBVVWB_IMG_LIST}" | tail -n 1)"
+
+	case "$(head -n 1 "${FBVVWB_IMG_LIST}")" in
+		unar)
+			IMG_ID_PATH=$(GetImgIdPath "${PAGE}")
+			IMG_ID=$(cut -d':' -f1 <<<"${IMG_ID_PATH}")
+			IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
+			EXT=${IMG_PATH##*.}
+			IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.${EXT}"
+			unar "${TARGET}" -i "${IMG_ID}" -q -o - >"${IMG_NAME}"
+			echo "${IMG_NAME}"
+			;;
+		pdf)
+			local TMP="${FBVVWB_DIRECTORY}/img_tmp"
+			EXT="png"
+			pdftoppm -"${EXT}" -f"${PAGE}" -l"${PAGE}" "${TARGET}" "${TMP}"
+			IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.{EXT}"
+			mv "${TMP}-1.${EXT}" "${IMG_NAME}"
+			echo "${IMG_NAME}"
+			;;
+		img)
+			IMG_ID_PATH=$(GetImgIdPath "${PAGE}")
+			IMG_ID=$(cut -d':' -f1 <<<"${IMG_ID_PATH}")
+			IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
+			echo "${IMG_PATH}"
+			;;
+		*)
+			;;
+	esac
+}
+
 
 function PageLink() {
 	local PAGE=$1
@@ -464,8 +504,8 @@ function PageLink() {
 		QUERY["page"]=${PAGE}
 		if [[ "${QUERY[mode]}" = "image_viewer" ]]; then
 			CURRENT_PATH=${QUERY["cp"]}
-			IMG_ID_PATH=$(GetImgIdPath "${PAGE}")
-			IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
+			#IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
+			IMG_PATH=$(GetImgPath "${PAGE}" "0")
 			QUERY["cp"]=${IMG_PATH}
 		fi
 		echo -n "<a href=\"$(QueryLink)\">${NAME}</a>"
@@ -494,7 +534,7 @@ function TailLink() {
 	else
 		OFFSET=0
 	fi
-	if [[ $((QUERY[page] + OFFSET)) -ne ${PAGE} ]]; then
+	if [[ $((QUERY[page] + OFFSET)) -le ${PAGE} ]]; then
 		PageLink "${PAGE}" "Tail"
 	else
 		echo "Tail"
@@ -546,31 +586,8 @@ function ImgSrc() {
 	local NUM=$2
 	local PERCENT=$3
 
-	IMG_ID_PATH=$(GetImgIdPath "${PAGE}")
-	IMG_ID=$(cut -d':' -f1 <<<"${IMG_ID_PATH}")
-	IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
-
-	case "${QUERY[mode]}" in
-	manga_viewer)
-		IMG_ID=$((IMG_ID - 2))
-		echo -n "<!-- ${IMG_ID} : ${IMG_PATH} -->"
-		EXT=${IMG_PATH##*.}
-		IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.${EXT}"
-		unar "${CURRENT_PATH}" -i "${IMG_ID}" -q -o - >"${IMG_NAME}"
-		echo "<img src=\"$(UrlPath "${IMG_NAME}")\" width=${PERCENT}%>"
-		;;
-	image_viewer)
-		# IMG_ID=$((IMG_ID - 2))
-		# echo -n "<!-- ${IMG_ID} : ${IMG_PATH} -->"
-		# EXT=${IMG_PATH##*.}
-		# IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.${EXT}"
-		# unar "${CURRENT_PATH}" -i "${IMG_ID}" -q -o - >"${IMG_NAME}"
-		# echo "HERE"
-		echo "<img src=\"$(UrlPath "${IMG_PATH}")\" width=${PERCENT}%>"
-		;;
-	*) ;;
-
-	esac
+	IMG_PATH=$(GetImgPath "${PAGE}" "${NUM}")
+	echo "<img src=\"$(UrlPath "${IMG_PATH}")\" width=${PERCENT}%>"
 }
 
 function ViewerSetting() {
@@ -589,7 +606,6 @@ function ViewerSetting() {
 			echo "<a href=\"$(QueryLink)\">--></a>"
 		fi
 		QUERY["order"]=${ORDER}
-		#unset QUERY["order"]
 		QUERY["view_mode"]="single"
 		echo "<a href=\"$(QueryLink)\">Single Page</a>"
 	else
@@ -627,6 +643,7 @@ function ImageViewer() {
 		done
 	else
 		IMG_SRC=$(ImgSrc "${QUERY[page]}" "0" "${PERCENT}")
+		#echo "<!-page=${QUERY[page]}->"
 		PageLink "$((QUERY[page] + 1))" "${IMG_SRC}"
 	fi
 	echo "<br>"
