@@ -188,7 +188,7 @@ if [[ "$#" -ne 0 ]]; then
 	while [[ "$#" -ne 0 ]]; do
 		case "$1" in
 		-h)
-			grep "^#" "$0" | sed -e 's/^[ \t]*[#]\+[ ]\{0,1\}//'
+			grep "^#" "$0" | tail -n+3 sed -e 's/^[ \t]*[#]\+[ ]\{0,1\}//'
 			;;
 		--generate-readme)
 			bash "$0" -h >"README.md"
@@ -445,8 +445,13 @@ function GetImgListMax() {
 	echo "${IMG_MAX}"
 }
 
+
+function PrepareImg(){
+	local PAGE=$1
+}
+
 function GetImgIdPath() {
-	PAGE=$1
+	local PAGE=$1
 	head -n $((PAGE + 1)) "${FBVVWB_IMG_LIST}" | tail -n 1
 }
 
@@ -548,7 +553,7 @@ function ImgSrc() {
 	case "${QUERY[mode]}" in
 	manga_viewer)
 		IMG_ID=$((IMG_ID - 2))
-		# echo -n "<!-- ${IMG_ID} : ${IMG_PATH} -->"
+		echo -n "<!-- ${IMG_ID} : ${IMG_PATH} -->"
 		EXT=${IMG_PATH##*.}
 		IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.${EXT}"
 		unar "${CURRENT_PATH}" -i "${IMG_ID}" -q -o - >"${IMG_NAME}"
@@ -639,6 +644,13 @@ function ImageViewer() {
 	unset QUERY["page"]
 	UpLink
 	TrashAskLink
+
+	MODE=${QUERY["mode"]}
+	QUERY["mode"]="save"
+	echo -n "<span style=\"float:right\">"
+	echo "<a href=\"$(QueryLink)\">save</a>"
+	echo -n "</span>"
+	QUERY["mode"]=${MODE}
 	echo "<div>"
 
 }
@@ -709,11 +721,16 @@ EOF
 
 # Mode selecter for special page.
 case "${QUERY[mode]}" in
-history)
-	unset QUERY["mode"]
-	UpLink
-	echo "<ul>"
-	sort -r "${FBVVWB_MANGA_HISTORY}" | while read -r LINE; do
+	save)
+		unset QUERY["mode"]
+		echo "saved."
+		echo "$0?${QUERY_STRING}"
+		;;
+	history)
+		unset QUERY["mode"]
+		UpLink
+		echo "<ul>"
+		sort -r "${FBVVWB_MANGA_HISTORY}" | while read -r LINE; do
 		echo "<li>"
 		QUERY["cp"]=${LINE}
 		echo "<a href=\"$(QueryLink)\">${LINE}</a>"
@@ -726,16 +743,16 @@ trash_ask)
 	echo "<p>Delete  ${QUERY[cp]}.</p>"
 	echo "<p>Are you sure?</p>"
 	echo "<p>"
-	QUERY["trash"]='trash'
+	QUERY["mode"]='trash'
 	echo "<a href=\"$(QueryLink)\">Delete</a>"
-	unset QUERY["trash"]
+	unset QUERY["mode"]
 	echo "<a href=\"$(QueryLink)\">Cancel</a>"
 	echo "</p>"
 	echo "</div>"
 	;;
 
 trash)
-	unset QUERY["trash"]
+	unset QUERY["mode"]
 	echo "<div style=\"text-align:center\">"
 	if [[ -f "${QUERY[cp]}" ]]; then
 		TrashCommand "${QUERY[cp]}"
