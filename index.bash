@@ -424,7 +424,7 @@ function CreateDirImgIdPath() {
 	if [[ ! -e "${FBVVWB_IMG_LIST}" ]] || [[ "${DIR}" != "${C_DIR}" ]]; then
 		echo "img" >"${FBVVWB_IMG_LIST}"
 		echo "${C_DIR}" >>"${FBVVWB_IMG_LIST}"
-		find -L "${C_DIR}" -type f -mindepth 1 -maxdepth 1 -not -name ".*" | grep -n -i -e ".jpg" -e ".png" -e ".gif" | sort -V -k2 -t':' >>"${FBVVWB_IMG_LIST}"
+		find -L "${C_DIR}" -type f -mindepth 1 -maxdepth 1 -not -name ".*" | grep -n -i -e ".jpg" -e ".jpeg" -e ".png" -e ".gif" | sort -V -k2 -t':' >>"${FBVVWB_IMG_LIST}"
 	fi
 	PAGE=$(grep -n "${CURRENT_PATH}" "${FBVVWB_IMG_LIST}" | cut -d':' -f1)
 	# Because, first line is directory name.
@@ -432,17 +432,17 @@ function CreateDirImgIdPath() {
 	QUERY["page"]=${PAGE}
 }
 
-function CreateImgIdPath() {
-	case "${QUERY[mode]}" in
-	manga_viewer)
-		CreateArcImgIdPath
-		;;
-	image_viewer)
-		CreateDirImgIdPath
-		;;
-	*) ;;
-	esac
-}
+#function CreateImgIdPath() {
+#	case "${QUERY[mode]}" in
+#	manga_viewer)
+#		CreateArcImgIdPath
+#		;;
+#	image_viewer)
+#		CreateDirImgIdPath
+#		;;
+#	*) ;;
+#	esac
+#}
 
 function GetImgListMax() {
 	if [[ ${IMG_MAX} == "" ]]; then
@@ -456,44 +456,46 @@ function GetImgIdPath() {
 	head -n $((PAGE + 2)) "${FBVVWB_IMG_LIST}" | tail -n 1
 }
 
-function GetImgPath(){
-
+function GetImgPath() {
 	local PAGE=$1
 	local NUM=$2
-	local CP
+	local IMG_NAME
+	local IMG_PATH
+	local IMG_ID_PATH
+	local IMG_ID
 	#echo -n "<!- page=${PAGE}->"
 
 	TARGET="$(head -n 2 "${FBVVWB_IMG_LIST}" | tail -n 1)"
 
 	case "$(head -n 1 "${FBVVWB_IMG_LIST}")" in
-		unar)
-			IMG_ID_PATH=$(GetImgIdPath "${PAGE}")
-			IMG_ID=$(cut -d':' -f1 <<<"${IMG_ID_PATH}")
-			IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
-			EXT=${IMG_PATH##*.}
-			IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.${EXT}"
-			unar "${TARGET}" -i "${IMG_ID}" -q -o - >"${IMG_NAME}"
-			echo "${IMG_NAME}"
-			;;
-		pdf)
-			local TMP="${FBVVWB_DIRECTORY}/img_tmp"
-			EXT="png"
-			pdftoppm -"${EXT}" -f"${PAGE}" -l"${PAGE}" "${TARGET}" "${TMP}"
-			IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.{EXT}"
-			mv "${TMP}-1.${EXT}" "${IMG_NAME}"
-			echo "${IMG_NAME}"
-			;;
-		img)
-			IMG_ID_PATH=$(GetImgIdPath "${PAGE}")
-			IMG_ID=$(cut -d':' -f1 <<<"${IMG_ID_PATH}")
-			IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
-			echo "${IMG_PATH}"
-			;;
-		*)
-			;;
+	unar)
+		IMG_ID_PATH=$(GetImgIdPath "${PAGE}")
+		IMG_ID=$(cut -d':' -f1 <<<"${IMG_ID_PATH}")
+		IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
+		EXT=${IMG_PATH##*.}
+		IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.${EXT}"
+		IMG_ID=$((IMG_ID-2))
+		unar "${TARGET}" -i "${IMG_ID}" -q -o - >"${IMG_NAME}"
+		echo "${IMG_NAME}"
+		;;
+	pdf)
+		local TMP="${FBVVWB_DIRECTORY}/img_tmp"
+		EXT="png"
+		pdftoppm -"${EXT}" -f"${PAGE}" -l"${PAGE}" "${TARGET}" "${TMP}"
+		IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.{EXT}"
+		mv "${TMP}-1.${EXT}" "${IMG_NAME}"
+		echo "${IMG_NAME}"
+		;;
+	img)
+		IMG_ID_PATH=$(GetImgIdPath "${PAGE}")
+		IMG_ID=$(cut -d':' -f1 <<<"${IMG_ID_PATH}")
+		IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
+		echo "${IMG_PATH}"
+		;;
+	*) ;;
+
 	esac
 }
-
 
 function PageLink() {
 	local PAGE=$1
@@ -503,6 +505,7 @@ function PageLink() {
 		TMP=${QUERY["page"]}
 		QUERY["page"]=${PAGE}
 		if [[ "${QUERY[mode]}" = "image_viewer" ]]; then
+
 			CURRENT_PATH=${QUERY["cp"]}
 			#IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
 			IMG_PATH=$(GetImgPath "${PAGE}" "0")
@@ -586,7 +589,8 @@ function ImgSrc() {
 	local NUM=$2
 	local PERCENT=$3
 
-	IMG_PATH=$(GetImgPath "${PAGE}" "${NUM}")
+	local IMG_PATH=$(GetImgPath "${PAGE}" "${NUM}")
+	# echo "<-- IMG_PATH=${IMG_PATH} -->"
 	echo "<img src=\"$(UrlPath "${IMG_PATH}")\" width=${PERCENT}%>"
 }
 
@@ -617,7 +621,7 @@ function ViewerSetting() {
 }
 
 function ImageViewer() {
-	CreateImgIdPath
+	#CreateImgIdPath
 	PAGE="${QUERY[page]}"
 	if [[ "${PAGE}" -ge "$(GetImgListMax)" ]]; then
 		PAGE=$(GetImgListMax)
@@ -676,14 +680,17 @@ function VideoPlayer() {
 	echo "$(basename "${QUERY[cp]}")<br>"
 	HEIGHT=300
 	echo "<div style=\"text-align:center\">"
-	echo "<video src=\"$(UrlPath "${QUERY[cp]}")\" height=\"${HEIGHT}\" controls autoplay align=\"center\"></video>"
+	echo "<video height=\"${HEIGHT}\" muted controls autoplay>"
+	echo "<source src=\"$(UrlPath "${QUERY[cp]}")\" type=\"video/mp4\">"
+	echo "</video>"
+
 	echo "</div>"
 	echo "<p>"
 	UpLink
 	echo "</p>"
 }
 
-function AudioPlayer(){
+function AudioPlayer() {
 	echo "$(basename "${QUERY[cp]}")<br>"
 	echo "<div style=\"text-align:center\">"
 	echo "<audio src=\"$(UrlPath "${QUERY[cp]}")\" controls autoplay align=\"center\"></audio>"
@@ -701,16 +708,28 @@ function AudioPlayer(){
 #
 
 function FileViewer() {
-	if [[ "${CURRENT_PATH}" =~ .*\.mp4|.*\.avi ]]; then
+	if [[ "${CURRENT_PATH}" =~ .*\.mp4|.*\.avi|.*\.wmv|.*\.mkv ]]; then
 		VideoPlayer
 	elif [[ "${CURRENT_PATH}" =~ .*\.zip|.*\.rar|.*\.tar|.*\.tar\..* ]]; then
-		QUERY["mode"]="manga_viewer"
+		# QUERY["mode"]="manga_viewer"
+		CreateArcImgIdPath
 		ImageViewer
 	elif [[ "${CURRENT_PATH}" =~ .*\.jpg|.*\.png|.*\.jpeg|.*\.gif ]]; then
-		QUERY["mode"]="image_viewer"
+		CreateDirImgIdPath
+		#QUERY["mode"]="image_viewer"
 		ImageViewer
-	elif [[ "${CURRENT_PATH}" =~ .*\.mp3|.*\.flag|.*\.wav ]]; then
+	elif [[ "${CURRENT_PATH}" =~ .*\.mp3|.*\.flac|.*\.wav ]]; then
 		AudioPlayer
+	elif [[ "${CURRENT_PATH}" =~ .*\.pdf|.*\.PDF ]]; then
+		echo "pdf" >"${FBVVWB_IMG_LIST}"
+		echo "${CURRENT_PATH}" >>"${FBVVWB_IMG_LIST}"
+		ImageViewer
+	elif [[ "${CURRENT_PATH}" =~ .*\.txt|.*\.TXT ]]; then
+		echo "<pre>"
+		cat "${CURRENT_PATH}"
+		echo "</pre>"
+		UpLink
+
 	else
 		echo "Yet implemented to open this file.<br>"
 		echo "${CURRENT_PATH}<br>"
@@ -733,21 +752,21 @@ cat <<EOF
 <meta charset="UTF-8">
 <title>${CURRENT_PATH}</title>
 </head>
-<body>
+<body bgcolor="black" text="gray" link="gray" vlink="gray" alink="gray">
 EOF
 
 # Mode selecter for special page.
 case "${QUERY[mode]}" in
-	save)
-		unset QUERY["mode"]
-		echo "saved."
-		echo "$0?${QUERY_STRING}"
-		;;
-	history)
-		unset QUERY["mode"]
-		UpLink
-		echo "<ul>"
-		sort -r "${FBVVWB_MANGA_HISTORY}" | while read -r LINE; do
+save)
+	unset QUERY["mode"]
+	echo "saved."
+	echo "$0?${QUERY_STRING}"
+	;;
+history)
+	unset QUERY["mode"]
+	UpLink
+	echo "<ul>"
+	sort -r "${FBVVWB_MANGA_HISTORY}" | while read -r LINE; do
 		echo "<li>"
 		QUERY["cp"]=${LINE}
 		echo "<a href=\"$(QueryLink)\">${LINE}</a>"
