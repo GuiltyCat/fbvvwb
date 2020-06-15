@@ -481,9 +481,9 @@ function GetImgPath() {
 	pdf)
 		local TMP="${FBVVWB_DIRECTORY}/img_tmp"
 		EXT="png"
-		pdftoppm -"${EXT}" -f"${PAGE}" -l"${PAGE}" "${TARGET}" "${TMP}"
-		IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.{EXT}"
-		mv "${TMP}-1.${EXT}" "${IMG_NAME}"
+		pdftoppm -png -f "${PAGE}" -l "${PAGE}" "${TARGET}" "${TMP}" 2>&1
+		IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.${EXT}"
+		mv "${TMP}-${PAGE}.${EXT}" "${IMG_NAME}"
 		echo "${IMG_NAME}"
 		;;
 	img)
@@ -505,7 +505,6 @@ function PageLink() {
 		TMP=${QUERY["page"]}
 		QUERY["page"]=${PAGE}
 		if [[ "${QUERY[mode]}" = "image_viewer" ]]; then
-
 			CURRENT_PATH=${QUERY["cp"]}
 			#IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
 			IMG_PATH=$(GetImgPath "${PAGE}" "0")
@@ -711,18 +710,21 @@ function FileViewer() {
 	if [[ "${CURRENT_PATH}" =~ .*\.mp4|.*\.avi|.*\.wmv|.*\.mkv ]]; then
 		VideoPlayer
 	elif [[ "${CURRENT_PATH}" =~ .*\.zip|.*\.rar|.*\.tar|.*\.tar\..* ]]; then
-		# QUERY["mode"]="manga_viewer"
+		QUERY["mode"]="manga_viewer"
 		CreateArcImgIdPath
 		ImageViewer
 	elif [[ "${CURRENT_PATH}" =~ .*\.jpg|.*\.png|.*\.jpeg|.*\.gif ]]; then
 		CreateDirImgIdPath
-		#QUERY["mode"]="image_viewer"
+		QUERY["mode"]="image_viewer"
 		ImageViewer
 	elif [[ "${CURRENT_PATH}" =~ .*\.mp3|.*\.flac|.*\.wav ]]; then
 		AudioPlayer
 	elif [[ "${CURRENT_PATH}" =~ .*\.pdf|.*\.PDF ]]; then
+		QUERY["mode"]="pdf_viewer"
 		echo "pdf" >"${FBVVWB_IMG_LIST}"
 		echo "${CURRENT_PATH}" >>"${FBVVWB_IMG_LIST}"
+		#echo "SEQ=$(pdfinfo "${CURRENT_PATH}" | grep -a "Pages" | tr -d ' ' | cut -d':' -f2)" 
+		seq "$(pdfinfo "${CURRENT_PATH}" | grep "Pages" | tr -d ' ' | cut -d':' -f2)" >>"${FBVVWB_IMG_LIST}"
 		ImageViewer
 	elif [[ "${CURRENT_PATH}" =~ .*\.txt|.*\.TXT ]]; then
 		echo "<pre>"
