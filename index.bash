@@ -274,6 +274,11 @@ declare -A QUERY
 for i in $(tr '&' ' ' <<<"${QUERY_STRING}"); do
 	KEY=${i%%=*}
 	VALUE=${i##*=}
+	HASH=${VALUE##*#}
+	if [[ "${HASH}" != "" ]]; then
+		QUERY["hash"]=${HASH}
+	fi
+	VALUE=${VALUE%%#*}
 	QUERY[${KEY}]=$(nkf -w --url-input <<<"${VALUE}")
 done
 
@@ -329,14 +334,38 @@ CURRENT_PATH=${QUERY[cp]%/}
 # -----------------
 ###################
 
+function PushUpLinkNum() {
+	NUM=$1
+	QUERY["uplink"]=${QUERY["uplink"]}_${NUM}
+}
+
+function HeadUpLinkNum() {
+	echo "${QUERY[uplink]##*_}"
+}
+
+function PopUpLinkNum() {
+	# echo "b:${QUERY[uplink]}"
+	QUERY["uplink"]="${QUERY[uplink]%_*}"
+}
+
 function UpLink() {
-	local TMP
-	TMP=${QUERY[cp]}
-	QUERY["cp"]="${CURRENT_PATH%/*}/"
+	local UPLINK
+	local UPLINK_NUM
+	UPLINK_NUM="$(HeadUpLinkNum)"
+	local HASH
+	HASH=""
+	if [[ "${UPLINK_NUM}" != "" ]]; then
+		HASH="#${UPLINK_NUM}"
+	fi
+	PopUpLinkNum
+	local CURRENT_PATH
+	CURRENT_PATH=${QUERY[cp]}
+	QUERY["cp"]="${QUERY[cp]%/*}"
 	echo -n "<span style=\"float:left\">"
-	echo -n "<a href=\"$(QueryLink)\">../</a>"
+	echo -n "<a href=\"$(QueryLink)${HASH}\">../</a>"
 	echo -n "</span>"
-	QUERY["cp"]=$TMP
+	PushUpLinkNum "${UPLINK_NUM}"
+	QUERY["cp"]=${CURRENT_PATH}
 }
 
 function QueryLink() {
@@ -382,16 +411,23 @@ function FileBrowser() {
 	if [[ "${CURRENT_PATH}" != "${TOP_DIRECTORY}" ]]; then
 		UpLink
 	fi
+	COUNTER=0
 	echo "<ul>"
 	for t in "d" "f"; do
-		find -L "${CURRENT_PATH}" -type "${t}" -mindepth 1 -maxdepth 1 -not -name ".*" | sort -V | while read -r i; do
+		# if you pipe this.
+		# sub process  is created,
+		# thus you cannot update COUNTER.
+		while read -r i; do
 			QUERY["cp"]=${i}
 			NAME=$(basename "${i}")
 			if [[ "${t}" == "d" ]]; then
 				NAME="${NAME}/"
 			fi
-			echo "<li><a href=\"$(QueryLink)\">${NAME}</a></li>"
-		done
+			PushUpLinkNum "${COUNTER}"
+			echo "<li><a id=\"${COUNTER}\" href=\"$(QueryLink)\">${NAME}</a></li>"
+			PopUpLinkNum
+			COUNTER=$((COUNTER + 1))
+		done < <(find -L "${CURRENT_PATH}" -type "${t}" -mindepth 1 -maxdepth 1 -not -name ".*" | sort -V)
 		echo "<hr>"
 	done
 	echo "</ul>"
@@ -474,7 +510,7 @@ function GetImgPath() {
 		IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
 		EXT=${IMG_PATH##*.}
 		IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.${EXT}"
-		IMG_ID=$((IMG_ID-2))
+		IMG_ID=$((IMG_ID - 2))
 		unar "${TARGET}" -i "${IMG_ID}" -q -o - >"${IMG_NAME}"
 		echo "${IMG_NAME}"
 		;;
@@ -679,7 +715,8 @@ function VideoPlayer() {
 	echo "$(basename "${QUERY[cp]}")<br>"
 	HEIGHT=300
 	echo "<div style=\"text-align:center\">"
-	echo "<video height=\"${HEIGHT}\" muted controls autoplay>"
+	#echo "<video height=\"${HEIGHT}\" muted controls autoplay>"
+	echo "<video muted controls autoplay>"
 	echo "<source src=\"$(UrlPath "${QUERY[cp]}")\" type=\"video/mp4\">"
 	echo "</video>"
 
@@ -723,7 +760,7 @@ function FileViewer() {
 		QUERY["mode"]="pdf_viewer"
 		echo "pdf" >"${FBVVWB_IMG_LIST}"
 		echo "${CURRENT_PATH}" >>"${FBVVWB_IMG_LIST}"
-		#echo "SEQ=$(pdfinfo "${CURRENT_PATH}" | grep -a "Pages" | tr -d ' ' | cut -d':' -f2)" 
+		#echo "SEQ=$(pdfinfo "${CURRENT_PATH}" | grep -a "Pages" | tr -d ' ' | cut -d':' -f2)"
 		seq "$(pdfinfo "${CURRENT_PATH}" | grep "Pages" | tr -d ' ' | cut -d':' -f2)" >>"${FBVVWB_IMG_LIST}"
 		ImageViewer
 	elif [[ "${CURRENT_PATH}" =~ .*\.txt|.*\.TXT ]]; then
