@@ -1,5 +1,3 @@
-!/bin/bash
-set -e
 
 File Browser and Viewer Via Web Browser (FBVVWB)
 ================================================
@@ -24,6 +22,7 @@ You can
 	- Archive is suported (.zip .rar .tar.gz ...)
 	- Dual page mode is supported.
 - Watch movies.
+- Listen musics.
 - Trash files.
 
 This script is supported to work in Local Area Network (LAN).
@@ -40,6 +39,7 @@ Requirements
 	- grep, sed, cut, whoami, :,
 - unar/lsar
 - trash-cli
+- locale
 
 Security
 --------
@@ -89,6 +89,9 @@ SuexecUserGroup <user name> <user name>
 </IfModule>
 
 ```
+
+If you need more security,
+you should add some codes.
 
 Installation
 --------------
@@ -219,17 +222,30 @@ This list is saved as `${FBVVWB_DIRECTORY}/img_list`.
 For future use, FVVWB saves opened file name as history.
 Default name is `${FBVVWB_DIRECTORY}/history`
 
+
 ## Parsing query
 
-All functions are called by passing query.
+This CGI script works by passing query.
 If query is omitted, this script automatically complete by default value.
 And you can manually change query options.
 
+You can use GET and POST method.
+If you use apache.
+
+- GET passes as variable QUERY_STRING
+- POST passes as stdin.
+
 Unavailable options are ignored.
+
+
+### Get query
+
+
+### Post query
 
 ## For Security
 
-This script reject access without your home directory.
+This script reject access without your home and mnt directory.
 And also reject link to upper directory or contain keyword /root/.
 
 But if symbolic link exists under your home directory.
@@ -250,11 +266,34 @@ File Browser
 
 ImageViewer's functions
 --------------------
+function CreateImgIdPath() {
+	case "${QUERY[mode]}" in
+	manga_viewer)
+		CreateArcImgIdPath
+		;;
+	image_viewer)
+		CreateDirImgIdPath
+		;;
+	*) ;;
+	esac
+}
 
 FileViewer
 --------------
 
 Select how to open a selected file.
+
+
+Menu
+-----------
+
+
+History Mode
+--------------
+
+
+Search mode
+--------------
 
 
 main
