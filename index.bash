@@ -41,6 +41,7 @@
 # 	- grep, sed, cut, whoami, :,
 # - unar/lsar
 # - trash-cli
+# - locale
 #
 # Security
 # --------
@@ -90,6 +91,9 @@
 # </IfModule>
 #
 # ```
+#
+# If you need more security,
+# you should add some codes.
 #
 # Installation
 # --------------
@@ -188,12 +192,14 @@ if [[ "$#" -ne 0 ]]; then
 	while [[ "$#" -ne 0 ]]; do
 		case "$1" in
 		-h)
-			grep "^#" "$0" | tail -n+3 sed -e 's/^[ \t]*[#]\+[ ]\{0,1\}//'
+			grep "^#" "$0" | tail -n+3 | sed -e 's/^[ \t]*[#]\+[ ]\{0,1\}//'
 			;;
-		--generate-readme)
+		--generate-readme|-g)
 			bash "$0" -h >"README.md"
 			;;
-		*) ;;
+		*) 
+			echo "Such option is not allowed."
+			;;
 		esac
 		shift
 	done
@@ -264,47 +270,48 @@ fi
 #
 # ## Parsing query
 #
-# All functions are called by passing query.
+# This CGI script works by passing query.
 # If query is omitted, this script automatically complete by default value.
 # And you can manually change query options.
+#
+# You can use GET and POST method.
+# If you use apache.
+#
+# - GET passes as variable QUERY_STRING
+# - POST passes as stdin.
 #
 # Unavailable options are ignored.
 #
 declare -A QUERY
 
+function ParseQuery(){
+	LINE=$1
+	KEY=${LINE%%=*}
+	VALUE=${LINE##*=}
+	# HASH=${VALUE##*#}
+	# if [[ "${HASH}" != "" ]]; then
+	# 	QUERY["hash"]=${HASH}
+	# fi
+	VALUE=${VALUE%%#*}
+	QUERY[${KEY}]=$(nkf -w --url-input <<<"${VALUE}")
+}
+
 #
 # ### Get query
 #
-
 for i in $(tr '&' ' ' <<<"${QUERY_STRING}"); do
-	KEY=${i%%=*}
-	VALUE=${i##*=}
-	HASH=${VALUE##*#}
-	if [[ "${HASH}" != "" ]]; then
-		QUERY["hash"]=${HASH}
-	fi
-	VALUE=${VALUE%%#*}
-	QUERY[${KEY}]=$(nkf -w --url-input <<<"${VALUE}")
+	ParseQuery "${i}"
 done
-
 #
 # ### Post query
 #
-
 for i in $(cat - | tr '&' ' '); do
-	KEY=${i%%=*}
-	VALUE=${i##*=}
-	HASH=${VALUE##*#}
-	if [[ "${HASH}" != "" ]]; then
-		QUERY["hash"]=${HASH}
-	fi
-	VALUE=${VALUE%%#*}
-	QUERY[${KEY}]=$(nkf -w --url-input <<<"${VALUE}")
+	ParseQuery "${i}"
 done
 
 # ## For Security
 #
-# This script reject access without your home directory.
+# This script reject access without your home and mnt directory.
 # And also reject link to upper directory or contain keyword /root/.
 #
 # But if symbolic link exists under your home directory.
@@ -368,6 +375,14 @@ function PopUpLinkNum() {
 	QUERY["uplink"]="${QUERY[uplink]%_*}"
 }
 
+function BackLink(){
+	if [[ "${QUERY[keyword]}" = "" ]]; then
+		UpLink
+	else
+		SearchBackLink
+	fi
+}
+
 function UpLink() {
 	local UPLINK
 	local UPLINK_NUM
@@ -381,11 +396,14 @@ function UpLink() {
 	local CURRENT_PATH
 	CURRENT_PATH=${QUERY[cp]}
 	QUERY["cp"]="${QUERY[cp]%/*}"
+	local KEYWORD=${QUERY["keyword"]}
+	unset QUERY["keyword"]
 	echo -n "<span style=\"float:left\">"
 	echo -n "<a href=\"$(QueryLink)${HASH}\">../</a>"
 	echo -n "</span>"
 	PushUpLinkNum "${UPLINK_NUM}"
 	QUERY["cp"]=${CURRENT_PATH}
+	QUERY["keyword"]=${KEYWORD}
 }
 
 function QueryLink() {
@@ -429,7 +447,7 @@ function FileBrowser() {
 	#   link to each directory
 	echo "<h2>${CURRENT_PATH}</h2>"
 	if [[ "${CURRENT_PATH}" != "${TOP_DIRECTORY}" ]]; then
-		UpLink
+		BackLink
 	fi
 	Menu
 	COUNTER=0
@@ -719,17 +737,10 @@ function ImageViewer() {
 	# If you go to upper directory.
 	# page is reset to empty.
 	unset QUERY["page"]
-	UpLink
+	BackLink
 	TrashAskLink
-
-	MODE=${QUERY["mode"]}
-	QUERY["mode"]="save"
-	echo -n "<span style=\"float:right\">"
-	echo "<a href=\"$(QueryLink)\">save</a>"
-	echo -n "</span>"
-	QUERY["mode"]=${MODE}
+	Menu
 	echo "<div>"
-
 }
 
 function VideoPlayer() {
@@ -743,7 +754,7 @@ function VideoPlayer() {
 
 	echo "</div>"
 	echo "<p>"
-	UpLink
+	BackLink
 	echo "</p>"
 }
 
@@ -753,7 +764,7 @@ function AudioPlayer() {
 	echo "<audio src=\"$(UrlPath "${QUERY[cp]}")\" controls autoplay align=\"center\"></audio>"
 	echo "</div>"
 	echo "<p>"
-	UpLink
+	BackLink
 	echo "</p>"
 }
 
@@ -788,12 +799,12 @@ function FileViewer() {
 		echo "<pre>"
 		cat "${CURRENT_PATH}"
 		echo "</pre>"
-		UpLink
+		BackLink
 
 	else
 		echo "Yet implemented to open this file.<br>"
 		echo "${CURRENT_PATH}<br>"
-		UpLink
+		BackLink
 		echo "<br>"
 		# TrashAskLink
 	fi
@@ -804,14 +815,17 @@ function FileViewer() {
 # -----------
 #
 function Menu() {
-	MODE=QUERY["mode"]
+	MODE=${QUERY["mode"]}
 	QUERY["mode"]="history"
-	echo "<a href=\"$(QueryLink)\">History</a>"
+	echo -n "<span style=\"float:right\">"
+	echo -n "<a href=\"$(QueryLink)\">View History</a>"
 	QUERY["mode"]="search"
-	echo "<form action=\"$(QueryLink)\" method=\"post\">"
-	echo "<input type=\"text\" name=\"keyword\">"
-	echo "<input type=\"submit\" value=\"Search\">"
-	echo "</form>"
+	echo -n "<form style=\"display:inline\" action=\"$(QueryLink)\" method=\"post\">"
+	echo -n "<input type=\"text\" name=\"keyword\">"
+	echo -n "<input type=\"submit\" value=\"Search\">"
+	echo -n "</form>"
+	echo "</span>"
+	QUERY["mode"]=${MODE}
 }
 
 #
@@ -819,15 +833,15 @@ function Menu() {
 # --------------
 #
 function History() {
-	echo "<h1>History</h1>"
+	echo "<h2>History</h2>"
+	BackLink
 	echo "<ul>"
 	local COUNTER
 	COUNTER=0
-	UpLink
 	while read -r line; do
 		QUERY["cp"]=${line}
 		echo "<li><a href=\"$(QueryLink)\">$(basename "${line}")</a></li>"
-	done <"${FBVVWB_MANGA_HISTORY}"
+	done < <(tac "${FBVVWB_MANGA_HISTORY}")
 	echo "</ul>"
 }
 
@@ -838,15 +852,28 @@ function History() {
 function Search() {
 	unset QUERY["mode"]
 	echo "<h2>Search results</h2>"
-	KEY=${QUERY["keyword"]}
-	echo "${KEY}"
+	Menu
+	KEYWORD=${QUERY["keyword"]}
+	if [[ "${KEYWORD}" == "" ]]; then
+		UpLink
+		return
+	fi
+	echo "${KEYWORD}"
 	UpLink
 	echo "<ul>"
 	while read -r line; do
 		QUERY["cp"]=${line}
 		echo "<li><a href=\"$(QueryLink)\">${line}</a></li>"
-	done < <(locate -i "${KEY}")
+	done < <(locate -i "${KEYWORD}")
 	echo "</ul>"
+}
+
+function SearchBackLink(){
+	QUERY["mode"]="search"
+	echo -n "<span style=\"float:left\">"
+	echo -n "<a href=\"$(QueryLink)\">Back</a>"
+	echo -n "</span>"
+	unset QUERY["mode"]
 }
 
 #
@@ -867,11 +894,6 @@ EOF
 
 # Mode selecter for special page.
 case "${QUERY[mode]}" in
-save)
-	unset QUERY["mode"]
-	echo "saved."
-	echo "$0?${QUERY_STRING}"
-	;;
 history)
 	unset QUERY["mode"]
 	History
