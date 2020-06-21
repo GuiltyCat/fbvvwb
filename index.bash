@@ -261,6 +261,7 @@ if [[ ! -f "${FBVVWB_MANGA_HISTORY}" ]]; then
 	: >"${FBVVWB_MANGA_HISTORY}"
 fi
 
+#
 # ## Parsing query
 #
 # All functions are called by passing query.
@@ -271,7 +272,26 @@ fi
 #
 declare -A QUERY
 
+#
+# ### Get query
+#
+
 for i in $(tr '&' ' ' <<<"${QUERY_STRING}"); do
+	KEY=${i%%=*}
+	VALUE=${i##*=}
+	HASH=${VALUE##*#}
+	if [[ "${HASH}" != "" ]]; then
+		QUERY["hash"]=${HASH}
+	fi
+	VALUE=${VALUE%%#*}
+	QUERY[${KEY}]=$(nkf -w --url-input <<<"${VALUE}")
+done
+
+#
+# ### Post query
+#
+
+for i in $(cat - | tr '&' ' '); do
 	KEY=${i%%=*}
 	VALUE=${i##*=}
 	HASH=${VALUE##*#}
@@ -290,7 +310,7 @@ done
 # But if symbolic link exists under your home directory.
 # This script cannot prevent access to some dangerous place.
 #
-if [[ ! "${QUERY[cp]}" =~ /home/$(whoami)/.* ]]; then
+if [[ ! "${QUERY[cp]}" =~ /home/$(whoami)/.*|/mnt/.* ]]; then
 	QUERY["cp"]="${TOP_DIRECTORY}/"
 fi
 if [[ "${QUERY[cp]}" =~ .*/root/.*|\.\. ]]; then
@@ -411,6 +431,7 @@ function FileBrowser() {
 	if [[ "${CURRENT_PATH}" != "${TOP_DIRECTORY}" ]]; then
 		UpLink
 	fi
+	Menu
 	COUNTER=0
 	echo "<ul>"
 	for t in "d" "f"; do
@@ -774,8 +795,58 @@ function FileViewer() {
 		echo "${CURRENT_PATH}<br>"
 		UpLink
 		echo "<br>"
-		TrashAskLink
+		# TrashAskLink
 	fi
+}
+
+#
+# Menu
+# -----------
+#
+function Menu() {
+	MODE=QUERY["mode"]
+	QUERY["mode"]="history"
+	echo "<a href=\"$(QueryLink)\">History</a>"
+	QUERY["mode"]="search"
+	echo "<form action=\"$(QueryLink)\" method=\"post\">"
+	echo "<input type=\"text\" name=\"keyword\">"
+	echo "<input type=\"submit\" value=\"Search\">"
+	echo "</form>"
+}
+
+#
+# History Mode
+# --------------
+#
+function History() {
+	echo "<h1>History</h1>"
+	echo "<ul>"
+	local COUNTER
+	COUNTER=0
+	UpLink
+	while read -r line; do
+		QUERY["cp"]=${line}
+		echo "<li><a href=\"$(QueryLink)\">$(basename "${line}")</a></li>"
+	done <"${FBVVWB_MANGA_HISTORY}"
+	echo "</ul>"
+}
+
+#
+# Search mode
+# --------------
+#
+function Search() {
+	unset QUERY["mode"]
+	echo "<h2>Search results</h2>"
+	KEY=${QUERY["keyword"]}
+	echo "${KEY}"
+	UpLink
+	echo "<ul>"
+	while read -r line; do
+		QUERY["cp"]=${line}
+		echo "<li><a href=\"$(QueryLink)\">${line}</a></li>"
+	done < <(locate -i "${KEY}")
+	echo "</ul>"
 }
 
 #
@@ -803,15 +874,10 @@ save)
 	;;
 history)
 	unset QUERY["mode"]
-	UpLink
-	echo "<ul>"
-	sort -r "${FBVVWB_MANGA_HISTORY}" | while read -r LINE; do
-		echo "<li>"
-		QUERY["cp"]=${LINE}
-		echo "<a href=\"$(QueryLink)\">${LINE}</a>"
-		echo "</li>"
-	done
-	echo "</ul>"
+	History
+	;;
+search)
+	Search
 	;;
 trash_ask)
 	echo "<div style=\"text-align:center\">"
