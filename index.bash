@@ -12,10 +12,25 @@
 #  ///   /____// |//  |//  |//|//____//
 # ```
 #
+# Motivation
+# -----------
+#
+# I want to read manga(comics) zip file saved in my PC from iPad.
+# However, I cannot find any good free app that support stream reading.
+# Some apps are paid, some apps are with advertisement and
+# some apps require file downloading.
+# I do not want to pay money for software.
+#
+# Thus I implement this script.
+# Now I can browse file and read manga in my PC via web browser.
+# And more I can do more things.
+# For example, see videos, listen to musics, search files...
+#
 # Description
 # -----------
 #
 # This script is a simple file browser and viewer that works on a web server as CGI.
+# It is like file browsing app with simple viewer.
 #
 # You can
 #
@@ -181,7 +196,7 @@
 #
 # ```
 # - `-h`      : Generate markdown document from this script.
-# = `--generate-readme`
+# - `--generate-readme` or `-g`
 #             : Generate README.md from `-h` option's output.
 # - otherwise : Ignored.
 # ```
@@ -194,10 +209,10 @@ if [[ "$#" -ne 0 ]]; then
 		-h)
 			grep "^#" "$0" | tail -n+3 | sed -e 's/^[ \t]*[#]\+[ ]\{0,1\}//'
 			;;
-		--generate-readme|-g)
+		--generate-readme | -g)
 			bash "$0" -h >"README.md"
 			;;
-		*) 
+		*)
 			echo "Such option is not allowed."
 			;;
 		esac
@@ -284,7 +299,7 @@ fi
 #
 declare -A QUERY
 
-function ParseQuery(){
+function ParseQuery() {
 	LINE=$1
 	KEY=${LINE%%=*}
 	VALUE=${LINE##*=}
@@ -312,15 +327,17 @@ done
 # ## For Security
 #
 # This script reject access without your home and mnt directory.
-# And also reject link to upper directory or contain keyword /root/.
+# And also reject link to upper directory.
+# When it comes, cp is regarded as TOP_DIRECTORY.
 #
-# But if symbolic link exists under your home directory.
-# This script cannot prevent access to some dangerous place.
+# But this script do not check a destination of a symbolic link.
+# If symbolic link that points a dangerous place exists, 
+# This script cannot prevent access to that dangerous place.
 #
 if [[ ! "${QUERY[cp]}" =~ /home/$(whoami)/.*|/mnt/.* ]]; then
 	QUERY["cp"]="${TOP_DIRECTORY}/"
 fi
-if [[ "${QUERY[cp]}" =~ .*/root/.*|\.\. ]]; then
+if [[ "${QUERY[cp]}" =~ \.\. ]]; then
 	QUERY["cp"]="${TOP_DIRECTORY}/"
 fi
 
@@ -375,7 +392,7 @@ function PopUpLinkNum() {
 	QUERY["uplink"]="${QUERY[uplink]%_*}"
 }
 
-function BackLink(){
+function BackLink() {
 	if [[ "${QUERY[keyword]}" = "" ]]; then
 		UpLink
 	else
@@ -868,7 +885,7 @@ function Search() {
 	echo "</ul>"
 }
 
-function SearchBackLink(){
+function SearchBackLink() {
 	QUERY["mode"]="search"
 	echo -n "<span style=\"float:left\">"
 	echo -n "<a href=\"$(QueryLink)\">Back</a>"
