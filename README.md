@@ -10,10 +10,25 @@ File Browser and Viewer Via Web Browser (FBVVWB)
  ///   /____// |//  |//  |//|//____//
 ```
 
+Motivation
+-----------
+
+I want to read manga(comics) zip file saved in my PC from iPad.
+However, I cannot find any good free app that support stream reading.
+Some apps are paid, some apps are with advertisement and
+some apps require file downloading.
+I do not want to pay money for software.
+
+Thus I implement this script.
+Now I can browse file and read manga in my PC via web browser.
+And more I can do more things.
+For example, see videos, listen to musics, search files...
+
 Description
 -----------
 
 This script is a simple file browser and viewer that works on a web server as CGI.
+It is like file browsing app with simple viewer.
 
 You can
 
@@ -49,49 +64,6 @@ Never allow access to this CGI without you.
 
 At Least, you should enable `suexec` and `Digest Authentication` if you use Apache.
 And more, you should enable TLS and use HTTPS if you can do,
-
-### sample setting
-
-`/etc/httpd/conf/httpd.conf`
-
-```
-LoadModule suexec_module modules/mod_suexec.so
-...
-# I use cgid not cgi.
-LoadModule cgid_module modules/mod_cgid.so
-# LoadModule cgi_module modules/mod_cgi.so
-...
-SuexecUserGroup <user name> <user name>
-<Directory "/srv/http/cgi-bin">
-   AllowOverride None
-   Options None
-   AuthType Digest
-   AuthName "<authentication name>"
-   AuthUserFile "<file path created by htdigest>"
-   Require valid-user
-</Directory>
-...
-# I have only one directory in home thus I use *.
-# <Directory "/home/<user name>">
-<Directory "/home/*">
-    AllowOverride None
-    Options FollowSymLinks Indexes
-    AuthType Digest
-    AuthName "<authentication name"
-    AuthUserFile "<file path created by htdigest"
-    Require valid-user
-</Directory>
-...
-<IfModule userdir_module>
-    UserDir disabled
-    UserDir enabled <user name>
-    UserDir ./
-</IfModule>
-
-```
-
-If you need more security,
-you should add some codes.
 
 Installation
 --------------
@@ -179,7 +151,7 @@ Avairable options are
 
 ```
 - `-h`      : Generate markdown document from this script.
-= `--generate-readme`
+- `--generate-readme` or `-g`
             : Generate README.md from `-h` option's output.
 - otherwise : Ignored.
 ```
@@ -246,10 +218,12 @@ Unavailable options are ignored.
 ## For Security
 
 This script reject access without your home and mnt directory.
-And also reject link to upper directory or contain keyword /root/.
+And also reject link to upper directory.
+When it comes, cp is regarded as TOP_DIRECTORY.
 
-But if symbolic link exists under your home directory.
-This script cannot prevent access to some dangerous place.
+But this script do not check a destination of a symbolic link.
+If symbolic link that points a dangerous place exists, 
+This script cannot prevent access to that dangerous place.
 
 ## Set default query (key and value) if empty
 If page is not set or negative.
@@ -302,3 +276,100 @@ main
 print header
 Mode selecter for special page.
 print footer
+
+Apache Setting
+=================
+
+You can configure Apache setting in `/etc/httpd/conf/httpd.conf`
+
+Enable CGI
+---------------
+
+You can use either cgi or cgid.
+I use cgid, thus
+
+In default setting, both of them are commented out.
+
+```
+LoadModule cgid_module modules/mod_cgid.so
+# LoadModule cgi_module modules/mod_cgi.so
+...
+```
+
+Enable ScriptAlias.
+
+```
+	ScriptAlias /cgi-bin/ "/srv/http/cgi-bin/"
+```
+
+And .bash for CGI script.
+
+```
+   AddHandler cgi-script .cgi .bash
+```
+
+Enable SuExec
+-----------
+
+```
+LoadModule suexec_module modules/mod_suexec.so
+SuexecUserGroup <user name> <user name>
+```
+
+Digest Authentication
+-------------
+
+```
+<Directory "/srv/http/cgi-bin">
+    AllowOverride None
+    Options None
+    AuthType Digest
+    AuthName "<authentication name"
+    AuthUserFile "<file path created by htdigest"
+    Require valid-user
+</Directory>
+```
+
+Permit access to home directory
+----------------
+
+CGI itself can access any where.
+However, if you unzip a image from archive,
+you have to put somewhere that image.
+In this CGI script, the image is located in your home directory.
+Thus you should allow access to your home directory.
+
+...
+<Directory "/home/<user name>">
+# or
+# <Directory "/home/*">
+    AllowOverride None
+    Options FollowSymLinks Indexes
+    AuthType Digest
+    AuthName "<authentication name"
+    AuthUserFile "<file path created by htdigest"
+    Require valid-user
+</Directory>
+```
+
+Enable userdir
+---------------
+
+```
+LoadModule userdir_module modules/mod_userdir.so
+```
+
+You can access your home directory like this.
+
+```
+http://localhost/~<user name>/.fbvvwb
+```
+
+```
+<IfModule userdir_module>
+    UserDir disabled
+    UserDir enabled <user name>
+    UserDir ./
+</IfModule>
+
+```
