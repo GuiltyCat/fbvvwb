@@ -67,49 +67,6 @@
 # At Least, you should enable `suexec` and `Digest Authentication` if you use Apache.
 # And more, you should enable TLS and use HTTPS if you can do,
 #
-# ### sample setting
-#
-# `/etc/httpd/conf/httpd.conf`
-#
-# ```
-# LoadModule suexec_module modules/mod_suexec.so
-# ...
-# # I use cgid not cgi.
-# LoadModule cgid_module modules/mod_cgid.so
-# # LoadModule cgi_module modules/mod_cgi.so
-# ...
-# SuexecUserGroup <user name> <user name>
-# <Directory "/srv/http/cgi-bin">
-#    AllowOverride None
-#    Options None
-#    AuthType Digest
-#    AuthName "<authentication name>"
-#    AuthUserFile "<file path created by htdigest>"
-#    Require valid-user
-# </Directory>
-# ...
-# # I have only one directory in home thus I use *.
-# # <Directory "/home/<user name>">
-# <Directory "/home/*">
-#     AllowOverride None
-#     Options FollowSymLinks Indexes
-#     AuthType Digest
-#     AuthName "<authentication name"
-#     AuthUserFile "<file path created by htdigest"
-#     Require valid-user
-# </Directory>
-# ...
-# <IfModule userdir_module>
-#     UserDir disabled
-#     UserDir enabled <user name>
-#     UserDir ./
-# </IfModule>
-#
-# ```
-#
-# If you need more security,
-# you should add some codes.
-#
 # Installation
 # --------------
 #
@@ -765,7 +722,7 @@ function VideoPlayer() {
 	HEIGHT=300
 	echo "<div style=\"text-align:center\">"
 	#echo "<video height=\"${HEIGHT}\" muted controls autoplay>"
-	echo "<video muted controls autoplay>"
+	echo "<video width=100% muted controls autoplay>"
 	echo "<source src=\"$(UrlPath "${QUERY[cp]}")\" type=\"video/mp4\">"
 	echo "</video>"
 
@@ -966,3 +923,101 @@ cat <<EOF
 </body>
 </html>
 EOF
+
+#
+# Apache Setting
+# =================
+#
+# You can configure Apache setting in `/etc/httpd/conf/httpd.conf`
+#
+# Enable CGI
+# ---------------
+#
+# You can use either cgi or cgid.
+# I use cgid, thus
+#
+# In default setting, both of them are commented out.
+#
+# ```
+# LoadModule cgid_module modules/mod_cgid.so
+# # LoadModule cgi_module modules/mod_cgi.so
+# ...
+# ```
+#
+# Enable ScriptAlias.
+#
+# ```
+# 	ScriptAlias /cgi-bin/ "/srv/http/cgi-bin/"
+# ```
+#
+# And .bash for CGI script.
+#
+# ```
+#    AddHandler cgi-script .cgi .bash
+# ```
+#
+# Enable SuExec
+# -----------
+#
+# ```
+# LoadModule suexec_module modules/mod_suexec.so
+# SuexecUserGroup <user name> <user name>
+# ```
+#
+# Digest Authentication
+# -------------
+#
+# ```
+# <Directory "/srv/http/cgi-bin">
+#     AllowOverride None
+#     Options None
+#     AuthType Digest
+#     AuthName "<authentication name"
+#     AuthUserFile "<file path created by htdigest"
+#     Require valid-user
+# </Directory>
+# ```
+#
+# Permit access to home directory
+# ----------------
+#
+# CGI itself can access any where.
+# However, if you unzip a image from archive,
+# you have to put somewhere that image.
+# In this CGI script, the image is located in your home directory.
+# Thus you should allow access to your home directory.
+#
+# ...
+# <Directory "/home/<user name>">
+# # or
+# # <Directory "/home/*">
+#     AllowOverride None
+#     Options FollowSymLinks Indexes
+#     AuthType Digest
+#     AuthName "<authentication name"
+#     AuthUserFile "<file path created by htdigest"
+#     Require valid-user
+# </Directory>
+# ```
+#
+# Enable userdir
+# ---------------
+#
+# ```
+# LoadModule userdir_module modules/mod_userdir.so
+# ```
+#
+# You can access your home directory like this.
+#
+# ```
+# http://localhost/~<user name>/.fbvvwb
+# ```
+#
+# ```
+# <IfModule userdir_module>
+#     UserDir disabled
+#     UserDir enabled <user name>
+#     UserDir ./
+# </IfModule>
+#
+# ```
