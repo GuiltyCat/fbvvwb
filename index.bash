@@ -288,7 +288,7 @@ done
 # When it comes, cp is regarded as TOP_DIRECTORY.
 #
 # But this script do not check a destination of a symbolic link.
-# If symbolic link that points a dangerous place exists, 
+# If symbolic link that points a dangerous place exists,
 # This script cannot prevent access to that dangerous place.
 #
 if [[ ! "${QUERY[cp]}" =~ /home/$(whoami)/.*|/mnt/.* ]]; then
@@ -450,10 +450,17 @@ function FileBrowser() {
 # ImageViewer's functions
 # --------------------
 
+function AddToHistory() {
+	LINK=$1
+	if [[ "$(tail -n 1 "${FBVVWB_MANGA_HISTORY}")" != "${LINK}" ]]; then
+		echo "${LINK}" >>"${FBVVWB_MANGA_HISTORY}"
+	fi
+}
+
 function CreateArcImgIdPath() {
 	if [[ ! -e "${FBVVWB_IMG_LIST}" ]] || [[ $(head -n 1 "${FBVVWB_IMG_LIST}") != "${CURRENT_PATH}" ]]; then
-		echo "${CURRENT_PATH}" >>"${FBVVWB_MANGA_HISTORY}"
 		echo "unar" >"${FBVVWB_IMG_LIST}"
+		AddToHistory "${CURRENT_PATH}"
 		echo "${CURRENT_PATH}" >>"${FBVVWB_IMG_LIST}"
 		lsar "${CURRENT_PATH}" | grep -i -n -e ".jpg" -e ".jpeg" -e ".png" | sort -V -k2 -t ":" >>"${FBVVWB_IMG_LIST}"
 	fi
@@ -735,7 +742,7 @@ function VideoPlayer() {
 function AudioPlayer() {
 	echo "$(basename "${QUERY[cp]}")<br>"
 	echo "<div style=\"text-align:center\">"
-	echo "<audio src=\"$(UrlPath "${QUERY[cp]}")\" controls autoplay align=\"center\"></audio>"
+	echo "<audio style=\"width:100%\" src=\"$(UrlPath "${QUERY[cp]}")\" controls autoplay align=\"center\"></audio>"
 	echo "</div>"
 	echo "<p>"
 	BackLink
