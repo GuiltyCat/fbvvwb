@@ -605,44 +605,110 @@ function TailLink() {
 	fi
 }
 
+function JumpLink() {
+	local OFFSET=$1
+	local PLACE=$2
+	#echo -n "<span width=100% style=\"float:${PLACE}\">"
+	PageLink "$((QUERY[page] + OFFSET))" "${OFFSET}"
+	#echo -n "</span>"
+}
+
 function NextLink() {
-	local PLACE=$1
-	echo -n "<span style=\"float:${PLACE}\">"
+	#local PLACE=$1
+	#echo -n "<span style=\"float:${PLACE}\">"
 	if [[ "${QUERY[view_mode]}" = "dual" ]]; then
 		OFFSET=2
 	else
 		OFFSET=1
 	fi
 	PageLink "$((QUERY[page] + OFFSET))" "Next"
-	echo -n "</span>"
+	#echo -n "</span>"
 }
 
 function PrevLink() {
-	local PLACE=$1
-	echo -n "<span style=\"float:${PLACE}\">"
+	#local PLACE=$1
+	#echo -n "<span style=\"float:${PLACE}\">"
 	if [[ "${QUERY[view_mode]}" = "dual" ]]; then
 		OFFSET=2
 	else
 		OFFSET=1
 	fi
 	PageLink "$((QUERY[page] - OFFSET))" "Prev"
-	echo -n "</span>"
+	#echo -n "</span>"
+}
+
+function PercentChange() {
+	local OFFSET=$1
+	local PLACE=$2
+	local PERCENT
+	PERCENT=$((QUERY[percent] + OFFSET))
+	if [[ "${PERCENT}" -ge 0 ]]; then
+		local SAVE_PERCENT
+		SAVE_PERCENT=${QUERY["percent"]}
+		QUERY["percent"]=${PERCENT}
+		echo -n "<a href=\"$(QueryLink)\">${OFFSET}%</a>"
+		QUERY["percent"]=${SAVE_PERCENT}
+	else
+		echo -n "${OFFSET}%"
+	fi
 }
 
 function NavigationBar() {
+	echo -n "<table width=100%><tr>"
 	if [[ "${QUERY[order]}" = "rl" ]]; then
+		echo -n "<td>"
 		NextLink "left"
+		echo -n "</td>"
+		for i in $(seq 5); do
+			echo -n "<td>"
+			JumpLink "+$((2 ** i))" "justify"
+			echo -n "</td>"
+		done
+		echo -n "<td>"
 		TailLink
+		echo -n "</td><td>"
 		echo "(${QUERY[page]}/$(GetImgListMax))"
+		echo -n "</td><td>"
 		HeadLink
+		echo -n "</td>"
+		for i in $(seq 5 | tac); do
+			echo -n "<td>"
+			JumpLink "-$((2 ** i))" "justify"
+			echo -n "</td>"
+		done
+		echo -n "<td>"
 		PrevLink "right"
+		echo -n "</td>"
 	else
 		PrevLink "left"
+		JumpLink "-10" "justify"
 		HeadLink
 		echo "(${QUERY[page]}/$(GetImgListMax))"
 		TailLink
+		JumpLink "+10" "justify"
 		NextLink "right"
 	fi
+	echo -n "</tr>"
+	echo -n "</table>"
+	echo -n "<table width=100%><tr>"
+	for i in "+1" "+5" "+10"; do
+		echo -n "<td>"
+		PercentChange "${i}"
+		echo -n "</td>"
+	done
+	local SAVE_PERCENT
+	SAVE_PERCENT=${QUERY["percent"]}
+	QUERY["percent"]="100"
+	echo -n "<td>"
+	echo -n "<a href=\"$(QueryLink)\">100%</a>"
+	echo -n "</td>"
+	QUERY["percent"]=${SAVE_PERCENT}
+	for i in "-10" "-5" "-1"; do
+		echo -n "<td>"
+		PercentChange "${i}"
+		echo -n "</td>"
+	done
+	echo -n "</tr></table>"
 }
 
 function ImgSrc() {
