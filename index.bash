@@ -302,6 +302,12 @@ fi
 if [[ "${QUERY[cp]}" == "" ]]; then
 	QUERY["cp"]="${TOP_DIRECTORY}/"
 fi
+# This two hyphen is not equal.
+# 95 is true path.
+# Maybe nkf convert 95 to 94.
+# —:E2,80,94,
+# ―:E2,80,95,
+QUERY["cp"]=$(sed -e 's/—/―/g' <<<"${QUERY[cp]}")
 
 if [[ "${QUERY[mode]}" = "" ]]; then
 	QUERY["mode"]="browser"
@@ -910,14 +916,16 @@ trash)
 	UpLink
 	;;
 *)
-	if [[ -d ${CURRENT_PATH} ]]; then
+	if [[ -d "${CURRENT_PATH}" ]]; then
 		FileBrowser
-	elif [[ -f ${CURRENT_PATH} ]]; then
+	elif [[ -f "${CURRENT_PATH}" ]]; then
 		FileViewer
+		#elif [[ -e "${CURRENT_PATH}" ]];then
+		#echo "-e success<br>"
+		#echo "${CURRENT_PATH}"
 	else
-		echo "Not file. ${CURRENT_PATH}"
-		echo "Error"
-		echo "${CURRENT_PATH} does not exist."
+		echo "-d -f failed<br>"
+		echo "${CURRENT_PATH}"
 		echo "<p>"
 		UpLink
 		echo "</p>"
