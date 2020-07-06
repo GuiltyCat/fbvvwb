@@ -188,18 +188,6 @@ Content-Type: text/html
 
 EOF
 
-#
-# ## Read Config File
-#
-# Yet implemented
-#
-# ```
-# FBVVWB_CONFIG="/home/$(whoami)/.fbvvwb_conf"
-# if [[ ! -f "${FBVVWB_CONFIG}" ]]; then
-# fi
-# ```
-#
-
 # ## Prepare files
 #
 # Default top directory is defined by`TOP_DIRECTORY`.
@@ -222,6 +210,18 @@ FBVVWB_DIRECTORY="/home/$(whoami)/.fbvvwb"
 if [[ ! -d "${FBVVWB_DIRECTORY}" ]]; then
 	mkdir -p "${FBVVWB_DIRECTORY}"
 fi
+
+#
+## Read Config File
+#
+
+FBVVWB_CONFIG="${FBVVWB_DIRECTORY}/config"
+if [[ ! -f "${FBVVWB_CONFIG}" ]]; then
+	cat <<EOF >"${FBVVWB_CONFIG}"
+READ_DIRECTORY=""
+EOF
+fi
+source "${FBVVWB_CONFIG}"
 
 # FBVVWB save image list for image viewer mode.
 # This list is saved as `${FBVVWB_DIRECTORY}/img_list`.
@@ -494,18 +494,6 @@ function CreateDirImgIdPath() {
 	QUERY["page"]=${PAGE}
 }
 
-#function CreateImgIdPath() {
-#	case "${QUERY[mode]}" in
-#	manga_viewer)
-#		CreateArcImgIdPath
-#		;;
-#	image_viewer)
-#		CreateDirImgIdPath
-#		;;
-#	*) ;;
-#	esac
-#}
-
 function GetImgListMax() {
 	if [[ ${IMG_MAX} == "" ]]; then
 		IMG_MAX=$(($(wc -l "${FBVVWB_IMG_LIST}" | cut -d' ' -f1) - 2))
@@ -747,6 +735,15 @@ function ViewerSetting() {
 
 }
 
+function MoveToReadDirLink() {
+	echo "<div style=\"text-align:center\">"
+	local TMP=${QUERY["mode"]}
+	QUERY["mode"]="read"
+	echo "<a href=\"$(QueryLink)\">Move to read dir</a>"
+	QUERY["mode"]="${TMP}"
+	echo "</div>"
+}
+
 function ImageViewer() {
 	#CreateImgIdPath
 	PAGE="${QUERY[page]}"
@@ -793,7 +790,8 @@ function ImageViewer() {
 	BackLink
 	TrashAskLink
 	Menu
-	echo "<div>"
+	echo "<hr>"
+	MoveToReadDirLink
 }
 
 function VideoPlayer() {
@@ -966,7 +964,6 @@ trash_ask)
 	echo "</p>"
 	echo "</div>"
 	;;
-
 trash)
 	unset QUERY["mode"]
 	echo "<div style=\"text-align:center\">"
@@ -979,6 +976,21 @@ trash)
 		echo "${QUERY[cp]}<br> does not exist."
 	fi
 	echo "</div>"
+	UpLink
+	;;
+read)
+	if [[ -f "${CURRENT_PATH}" ]]; then
+		if [[ -d "${READ_DIRECTORY}" ]]; then
+			echo "mv ${CURRENT_PATH} ${READ_DIRECTORY}"
+			mv "${CURRENT_PATH}" "${READ_DIRECTORY}"
+		else
+			echo "READ_DIRECTORY is not set."
+			echo "<br>change config file."
+		fi
+	else
+		echo "${CURRENT_PATH} is not file."
+	fi
+	unset QUERY["mode"]
 	UpLink
 	;;
 *)
