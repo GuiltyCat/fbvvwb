@@ -163,17 +163,6 @@ If options are set, this script run as non-CGI mode.
 Apache requires MIME type.
 `Content-Type: text/html\n\n`
 
-
-## Read Config File
-
-Yet implemented
-
-```
-FBVVWB_CONFIG="/home/$(whoami)/.fbvvwb_conf"
-if [[ ! -f "${FBVVWB_CONFIG}" ]]; then
-fi
-```
-
 ## Prepare files
 
 Default top directory is defined by`TOP_DIRECTORY`.
@@ -187,6 +176,9 @@ make DISABLE_TRASH="true"
 FBWWB use several temporary directory and files.
 Default directory is `/home/<usr>/.fbvvwb`
 defined byu `FBVVWB_DIRECTORY`.
+
+
+Read Config File
 
 FBVVWB save image list for image viewer mode.
 This list is saved as `${FBVVWB_DIRECTORY}/img_list`.
@@ -222,10 +214,15 @@ And also reject link to upper directory.
 When it comes, cp is regarded as TOP_DIRECTORY.
 
 But this script do not check a destination of a symbolic link.
-If symbolic link that points a dangerous place exists, 
+If symbolic link that points a dangerous place exists,
 This script cannot prevent access to that dangerous place.
 
 ## Set default query (key and value) if empty
+This two hyphen is not equal.
+95 is true path.
+Maybe nkf convert 95 to 94.
+—:E2,80,94,
+―:E2,80,95,
 If page is not set or negative.
 page is automatically set as 1.
 
@@ -240,17 +237,6 @@ File Browser
 
 ImageViewer's functions
 --------------------
-function CreateImgIdPath() {
-	case "${QUERY[mode]}" in
-	manga_viewer)
-		CreateArcImgIdPath
-		;;
-	image_viewer)
-		CreateDirImgIdPath
-		;;
-	*) ;;
-	esac
-}
 
 FileViewer
 --------------
