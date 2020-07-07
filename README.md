@@ -180,6 +180,7 @@ defined byu `FBVVWB_DIRECTORY`.
 
 Read Config File
 
+!/bin/bash
 FBVVWB save image list for image viewer mode.
 This list is saved as `${FBVVWB_DIRECTORY}/img_list`.
 
@@ -201,6 +202,10 @@ If you use apache.
 
 Unavailable options are ignored.
 
+HASH=${VALUE##*#}
+if [[ "${HASH}" != "" ]]; then
+	QUERY["hash"]=${HASH}
+fi
 
 ### Get query
 
@@ -229,24 +234,58 @@ page is automatically set as 1.
 Prepare functions
 -----------------
 
+echo "b:${QUERY[uplink]}"
 ## Trash functions
 
 File Browser
 ------------
 
+I want to add link in each folder separated by /
+/home/bob/hello/world.txt
+  link to each directory
+if you pipe this.
+sub process  is created,
+thus you cannot update COUNTER.
 
 ImageViewer's functions
 --------------------
+echo "<!--C_DIR=${C_DIR}-->"
+Because, first line is directory name.
+echo -n "<!- page=${PAGE}->"
+IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
+echo -n "<span width=100% style=\"float:${PLACE}\">"
+echo -n "</span>"
+local PLACE=$1
+echo -n "<span style=\"float:${PLACE}\">"
+echo -n "</span>"
+local PLACE=$1
+echo -n "<span style=\"float:${PLACE}\">"
+echo -n "</span>"
+echo "<-- IMG_PATH=${IMG_PATH} -->"
+CreateImgIdPath
+0 -> -2, 1 -> +2
+echo "<!-page=${QUERY[page]}->"
+If you go to upper directory.
+page is reset to empty.
+echo "<video height=\"${HEIGHT}\" muted controls autoplay>"
 
 FileViewer
 --------------
 
 Select how to open a selected file.
 
+echo "SEQ=$(pdfinfo "${CURRENT_PATH}" | grep -a "Pages" | tr -d ' ' | cut -d':' -f2)"
+TrashAskLink
 
 Menu
 -----------
 
+
+You can add your own Menu Link.
+Add function name to MENU_LINKS in config file.
+See CreateConfig for more detail.
+
+Create sub-process to prevent variable from changing.
 
 History Mode
 --------------
@@ -261,6 +300,9 @@ main
 
 print header
 Mode selecter for special page.
+elif [[ -e "${CURRENT_PATH}" ]];then
+echo "-e success<br>"
+echo "${CURRENT_PATH}"
 print footer
 
 Apache Setting
