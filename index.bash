@@ -164,7 +164,7 @@ if [[ "$#" -ne 0 ]]; then
 	while [[ "$#" -ne 0 ]]; do
 		case "$1" in
 		-h)
-			grep "^#" "$0" | tail -n+3 | sed -e 's/^[ \t]*[#]\+[ ]\{0,1\}//'
+			grep "^\s*#" "$0" | tail -n+3 | sed -e 's/^\s*#\+[ ]\{0,1\}//'
 			;;
 		--generate-readme | -g)
 			bash "$0" -h >"README.md"
@@ -216,10 +216,15 @@ fi
 #
 
 FBVVWB_CONFIG="${FBVVWB_DIRECTORY}/config"
-if [[ ! -f "${FBVVWB_CONFIG}" ]]; then
+function CreateConfig() {
 	cat <<EOF >"${FBVVWB_CONFIG}"
+#!/bin/bash
 READ_DIRECTORY=""
+MENU_LINKS=()
 EOF
+}
+if [[ ! -f "${FBVVWB_CONFIG}" ]]; then
+	CreateConfig
 fi
 source "${FBVVWB_CONFIG}"
 
@@ -866,15 +871,29 @@ function FileViewer() {
 # -----------
 #
 function Menu() {
+	echo -n "<span style=\"float:right\">"
 	MODE=${QUERY["mode"]}
 	QUERY["mode"]="history"
-	echo -n "<span style=\"float:right\">"
 	echo -n "<a href=\"$(QueryLink)\">View History</a>"
+
+	#
+	# You can add your own Menu Link.
+	# Add function name to MENU_LINKS in config file.
+	# See CreateConfig for more detail.
+	#
+	for NAME in "${MENU_LINKS[@]}"; do
+		if [[ "$(type -t "${NAME}")" = "function" ]]; then
+			# Create sub-process to prevent variable from changing.
+			echo "$(eval "${NAME}")"
+		fi
+	done
+
 	QUERY["mode"]="search"
 	echo -n "<form style=\"display:inline\" action=\"$(QueryLink)\" method=\"post\">"
 	echo -n "<input type=\"text\" name=\"keyword\">"
 	echo -n "<input type=\"submit\" value=\"Search\">"
 	echo -n "</form>"
+
 	echo "</span>"
 	QUERY["mode"]=${MODE}
 }
