@@ -193,7 +193,7 @@ Content-Type: text/html
 <!-- If you run as bash, type Ctrl-D. -->
 EOF
 
-FBVVWB_CONFIG="${FBVVWB_DIRECTORY}/config"
+FBVVWB_CONFIG="/home/$(whoami)/.fbvvwb/config"
 function AddConfig() {
 	if [[ ! -f "${FBVVWB_CONFIG}" ]]; then
 		echo "#!/bin/bash" >"${FBVVWB_CONFIG}"
@@ -208,29 +208,16 @@ function PrintConfig() {
 #
 TOP_DIRECTORY="/home/\$(whoami)"
 
-# # FBWWB's temporary directory and files.
-#
-# FBWWB use temporary directory and several files.
-# Default directory is \$(/home/ <usr >/.fbvvwb)
-# defined byu \$(FBVVWB_DIRECTORY).
-#
-FBVVWB_DIRECTORY="/home/\$(whoami)/.fbvvwb"
-
 # Set "true" if you want to disable trash link.
 #
 DISABLE_TRASH="false"
 
+# You can set read directory.
+# If you read some comic you can move it to this place.
 READ_DIRECTORY=""
+
+# You can add your own function
 MENU_LINKS=()
-
-VIEWER_MENU_LINKS=()
-
-function MoveToReadDirLink() {
-	local TMP=\${QUERY["mode"]}
-	QUERY["mode"]="read"
-	echo "<a href=\"\$(QueryLink)\">Move to read dir</a>"
-	QUERY["mode"]="\${TMP}"
-}
 EOF
 }
 if [[ ! -f "${FBVVWB_CONFIG}" ]]; then
@@ -238,14 +225,14 @@ if [[ ! -f "${FBVVWB_CONFIG}" ]]; then
 fi
 
 TOP_DIRECTORY=""
-FBVVWB_DIRECTORY=""
+FBVVWB_DIRECTORY="/home/$(whoami)/.fbvvwb"
+[[ ! -d "${FBVVWB_DIRECTORY}" ]] && mkdir -p "${FBVVWB_DIRECTORY}"
+
 DISABLE_TRASH="false"
 
 source "${FBVVWB_CONFIG}"
 
 [[ ! -d "${TOP_DIRECTORY}" ]] && TOP_DIRECTORY="/home/$(whoami)"
-[[ "${FBVVWB_DIRECTORY}" = "" ]] && FBVVWB_DIRECTORY="/home/$(whoami)/.fbvvwb"
-[[ ! -d "${FBVVWB_DIRECTORY}" ]] && mkdir -p "${FBVVWB_DIRECTORY}"
 
 #
 # FBVVWB save image list for image viewer mode.
@@ -473,6 +460,14 @@ function FileBrowser() {
 #
 # ImageViewer's functions
 # --------------------
+#
+
+function MoveToReadDirLink() {
+	local TMP=${QUERY["mode"]}
+	QUERY["mode"]="read"
+	echo "<a href=\"$(QueryLink)\">Move to read dir</a>"
+	QUERY["mode"]="${TMP}"
+}
 
 function AddToHistory() {
 	LINK=$1
@@ -800,7 +795,7 @@ function ImageViewer() {
 	TrashAskLink
 	Menu
 	echo "<hr>"
-	# MoveToReadDirLink
+	MoveToReadDirLink
 }
 
 function VideoPlayer() {
@@ -838,7 +833,7 @@ function AudioPlayer() {
 function FileViewer() {
 	if [[ "${CURRENT_PATH}" =~ .*\.mp4|.*\.avi|.*\.wmv|.*\.mkv ]]; then
 		VideoPlayer
-	elif [[ "${CURRENT_PATH}" =~ .*\.zip|.*\.rar|.*\.tar|.*\.tar\..* ]]; then
+	elif [[ "${CURRENT_PATH}" =~ .*\.zip|.*\.rar|.*\.tar|.*\.tar\..*|.*\.ZIP ]]; then
 		QUERY["mode"]="manga_viewer"
 		CreateArcImgIdPath
 		ImageViewer
@@ -900,22 +895,6 @@ function Menu() {
 
 	echo "</span>"
 	QUERY["mode"]=${MODE}
-}
-
-function ViewerMenu() {
-	echo "<div style=\"text-align:center\">"
-	#
-	# You can add your own Menu Link in Viewer Mode.
-	# Add function name to VIEWER_MENU_LINKS in config file.
-	# See CreateConfig for more detail.
-	#
-	for NAME in "${VIEWER_MENU_LINKS[@]}"; do
-		if [[ "$(type -t "${NAME}")" = "function" ]]; then
-			# Create sub-process to prevent variable from changing.
-			echo "$(eval "${NAME}")"
-		fi
-	done
-	echo "</div>"
 }
 
 #
@@ -1017,21 +996,22 @@ trash)
 	echo "</div>"
 	UpLink
 	;;
-# read)
-# 	if [[ -f "${CURRENT_PATH}" ]]; then
-# 		if [[ -d "${READ_DIRECTORY}" ]]; then
-# 			echo "mv ${CURRENT_PATH} ${READ_DIRECTORY}"
-# 			mv "${CURRENT_PATH}" "${READ_DIRECTORY}"
-# 		else
-# 			echo "READ_DIRECTORY is not set."
-# 			echo "<br>change config file."
-# 		fi
-# 	else
-# 		echo "${CURRENT_PATH} is not file."
-# 	fi
-# 	unset QUERY["mode"]
-# 	UpLink
-# 	;;
+read)
+	if [[ -f "${CURRENT_PATH}" ]]; then
+		if [[ -d "${READ_DIRECTORY}" ]]; then
+			echo "mv ${CURRENT_PATH} ${READ_DIRECTORY}"
+			mv "${CURRENT_PATH}" "${READ_DIRECTORY}"
+		else
+			echo "READ_DIRECTORY is not set."
+			echo "<p>${READ_DIRECTORY}</p>"
+			echo "<br>change config file."
+		fi
+	else
+		echo "${CURRENT_PATH} is not file."
+	fi
+	unset QUERY["mode"]
+	UpLink
+	;;
 *)
 	if [[ -d "${CURRENT_PATH}" ]]; then
 		FileBrowser
