@@ -215,6 +215,7 @@ DISABLE_TRASH="false"
 # You can set read directory.
 # If you read some comic you can move it to this place.
 READ_DIRECTORY=""
+AFTER_DIRECTORY=""
 
 # You can add your own function
 MENU_LINKS=()
@@ -461,6 +462,13 @@ function FileBrowser() {
 # ImageViewer's functions
 # --------------------
 #
+function MoveToAfterDirLink() {
+	local TMP=${QUERY["mode"]}
+	QUERY["mode"]="after"
+	echo "<a href=\"$(QueryLink)\">Move to after dir</a>"
+	QUERY["mode"]="${TMP}"
+}
+
 
 function MoveToReadDirLink() {
 	local TMP=${QUERY["mode"]}
@@ -796,6 +804,7 @@ function ImageViewer() {
 	Menu
 	echo "<hr>"
 	MoveToReadDirLink
+	MoveToAfterDirLink
 }
 
 function VideoPlayer() {
@@ -994,6 +1003,22 @@ trash)
 		echo "${QUERY[cp]}<br> does not exist."
 	fi
 	echo "</div>"
+	UpLink
+	;;
+after)
+	if [[ -f "${CURRENT_PATH}" ]]; then
+		if [[ -d "${AFTER_DIRECTORY}" ]]; then
+			echo "mv ${CURRENT_PATH} ${AFTER_DIRECTORY}"
+			mv "${CURRENT_PATH}" "${AFTER_DIRECTORY}"
+		else
+			echo "AFTER_DIRECTORY is not set."
+			echo "<p>${AFTER_DIRECTORY}</p>"
+			echo "<br>change config file."
+		fi
+	else
+		echo "${CURRENT_PATH} is not file."
+	fi
+	unset QUERY["mode"]
 	UpLink
 	;;
 read)
