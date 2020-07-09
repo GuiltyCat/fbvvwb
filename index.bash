@@ -217,6 +217,10 @@ DISABLE_TRASH="false"
 READ_DIRECTORY=""
 AFTER_DIRECTORY=""
 
+# You can add your own directory.
+# trash is special command for trashing a file.
+MOVE_DIRS=("trash")
+
 # You can add your own function
 MENU_LINKS=()
 EOF
@@ -316,7 +320,7 @@ fi
 QUERY["cp"]=$(sed -e 's/—/―/g' <<<"${QUERY[cp]}")
 
 if [[ "${QUERY[mode]}" = "" ]]; then
-	QUERY["mode"]="browser"
+	QUERY["mode"]="default"
 fi
 
 case "${QUERY[view_mode]}" in
@@ -462,20 +466,37 @@ function FileBrowser() {
 # ImageViewer's functions
 # --------------------
 #
-function MoveToAfterDirLink() {
+
+function MoveFileLink() {
 	local TMP=${QUERY["mode"]}
-	QUERY["mode"]="after"
-	echo "<a href=\"$(QueryLink)\">Move to after dir</a>"
+	QUERY["mode"]="move_ask"
+	QUERY["move"]=$1
+	echo -n "<a href=\"$(QueryLink)\">$(basename "${1}")</a>"
+	unset QUERY["move"]
 	QUERY["mode"]="${TMP}"
 }
 
-
-function MoveToReadDirLink() {
-	local TMP=${QUERY["mode"]}
-	QUERY["mode"]="read"
-	echo "<a href=\"$(QueryLink)\">Move to read dir</a>"
-	QUERY["mode"]="${TMP}"
+function MoveLinks() {
+	echo -n "Move to:"
+	for NAME in "${MOVE_DIRS[@]}"; do
+		MoveFileLink "${NAME}"
+		echo -n ", "
+	done
 }
+
+# function MoveToAfterDirLink() {
+# 	local TMP=${QUERY["mode"]}
+# 	QUERY["mode"]="after"
+# 	echo "<a href=\"$(QueryLink)\">Move to after dir</a>"
+# 	QUERY["mode"]="${TMP}"
+# }
+# 
+# function MoveToReadDirLink() {
+# 	local TMP=${QUERY["mode"]}
+# 	QUERY["mode"]="read"
+# 	echo "<a href=\"$(QueryLink)\">Move to read dir</a>"
+# 	QUERY["mode"]="${TMP}"
+# }
 
 function AddToHistory() {
 	LINK=$1
@@ -805,6 +826,8 @@ function ImageViewer() {
 	echo "<hr>"
 	MoveToReadDirLink
 	MoveToAfterDirLink
+	echo "<hr>"
+	MoveLinks
 }
 
 function VideoPlayer() {
@@ -843,7 +866,7 @@ function FileViewer() {
 	if [[ "${CURRENT_PATH}" =~ .*\.mp4|.*\.avi|.*\.wmv|.*\.mkv ]]; then
 		VideoPlayer
 	elif [[ "${CURRENT_PATH}" =~ .*\.zip|.*\.rar|.*\.tar|.*\.tar\..*|.*\.ZIP ]]; then
-		QUERY["mode"]="manga_viewer"
+		#QUERY["mode"]="manga_viewer"
 		CreateArcImgIdPath
 		ImageViewer
 	elif [[ "${CURRENT_PATH}" =~ .*\.jpg|.*\.png|.*\.jpeg|.*\.gif ]]; then
@@ -979,72 +1002,104 @@ history)
 search)
 	Search
 	;;
-trash_ask)
+# trash_ask)
+# 	echo "<div style=\"text-align:center\">"
+# 	echo "<p>Delete  ${QUERY[cp]}.</p>"
+# 	echo "<p>Are you sure?</p>"
+# 	echo "<p>"
+# 	QUERY["mode"]='trash'
+# 	echo "<a href=\"$(QueryLink)\">Delete</a>"
+# 	unset QUERY["mode"]
+# 	echo "<a href=\"$(QueryLink)\">Cancel</a>"
+# 	echo "</p>"
+# 	echo "</div>"
+# 	;;
+# trash)
+# 	unset QUERY["mode"]
+# 	echo "<div style=\"text-align:center\">"
+# 	if [[ -f "${QUERY[cp]}" ]]; then
+# 		TrashCommand "${QUERY[cp]}"
+# 		echo "Trash ${QUERY[cp]}"
+# 	elif [[ -d "${QUERY[cp]}" ]]; then
+# 		echo "${QUERY[cp]} is directory.<br>For security, deleteing directory is not allowed."
+# 	else
+# 		echo "${QUERY[cp]}<br> does not exist."
+# 	fi
+# 	echo "</div>"
+# 	UpLink
+# 	;;
+move_ask)
 	echo "<div style=\"text-align:center\">"
-	echo "<p>Delete  ${QUERY[cp]}.</p>"
+	echo "<p>Move ${QUERY[cp]} to ${QUERY[move]}<p>"
 	echo "<p>Are you sure?</p>"
 	echo "<p>"
-	QUERY["mode"]='trash'
-	echo "<a href=\"$(QueryLink)\">Delete</a>"
+	QUERY["mode"]='move'
+	echo "<a href=\"$(QueryLink)\">Move</a>"
 	unset QUERY["mode"]
+	unset QUERY["move"]
 	echo "<a href=\"$(QueryLink)\">Cancel</a>"
 	echo "</p>"
 	echo "</div>"
 	;;
-trash)
-	unset QUERY["mode"]
+move)
 	echo "<div style=\"text-align:center\">"
-	if [[ -f "${QUERY[cp]}" ]]; then
+	if [[ -d "${QUERY[move]}" ]]; then
+		echo "<p>"
+		echo "mv ${QUERY[cp]} ${QUERY[move]}"
+		echo "</p>"
+		mv "${QUERY[cp]}" "${QUERY[move]}"
+	elif [[ "${QUERY[move]}" = "trash" ]]; then
+		echo "<p>"
+		echo "trash ${QUERY[cp]}"
+		echo "</p>"
 		TrashCommand "${QUERY[cp]}"
-		echo "Trash ${QUERY[cp]}"
-	elif [[ -d "${QUERY[cp]}" ]]; then
-		echo "${QUERY[cp]} is directory.<br>For security, deleteing directory is not allowed."
 	else
-		echo "${QUERY[cp]}<br> does not exist."
+		echo "No such directory."
+		echo "<p>${QUERY[move]}</p>"
+		echo "<p>change config file.</p>"
 	fi
 	echo "</div>"
-	UpLink
-	;;
-after)
-	if [[ -f "${CURRENT_PATH}" ]]; then
-		if [[ -d "${AFTER_DIRECTORY}" ]]; then
-			echo "mv ${CURRENT_PATH} ${AFTER_DIRECTORY}"
-			mv "${CURRENT_PATH}" "${AFTER_DIRECTORY}"
-		else
-			echo "AFTER_DIRECTORY is not set."
-			echo "<p>${AFTER_DIRECTORY}</p>"
-			echo "<br>change config file."
-		fi
-	else
-		echo "${CURRENT_PATH} is not file."
-	fi
 	unset QUERY["mode"]
+	unset QUERY["move"]
 	UpLink
 	;;
-read)
-	if [[ -f "${CURRENT_PATH}" ]]; then
-		if [[ -d "${READ_DIRECTORY}" ]]; then
-			echo "mv ${CURRENT_PATH} ${READ_DIRECTORY}"
-			mv "${CURRENT_PATH}" "${READ_DIRECTORY}"
-		else
-			echo "READ_DIRECTORY is not set."
-			echo "<p>${READ_DIRECTORY}</p>"
-			echo "<br>change config file."
-		fi
-	else
-		echo "${CURRENT_PATH} is not file."
-	fi
-	unset QUERY["mode"]
-	UpLink
-	;;
-*)
+# after)
+# 	if [[ -f "${CURRENT_PATH}" ]]; then
+# 		if [[ -d "${AFTER_DIRECTORY}" ]]; then
+# 			echo "mv ${CURRENT_PATH} ${AFTER_DIRECTORY}"
+# 			mv "${CURRENT_PATH}" "${AFTER_DIRECTORY}"
+# 		else
+# 			echo "AFTER_DIRECTORY is not set."
+# 			echo "<p>${AFTER_DIRECTORY}</p>"
+# 			echo "<br>change config file."
+# 		fi
+# 	else
+# 		echo "${CURRENT_PATH} is not file."
+# 	fi
+# 	unset QUERY["mode"]
+# 	UpLink
+# 	;;
+# read)
+# 	if [[ -f "${CURRENT_PATH}" ]]; then
+# 		if [[ -d "${READ_DIRECTORY}" ]]; then
+# 			echo "mv ${CURRENT_PATH} ${READ_DIRECTORY}"
+# 			mv "${CURRENT_PATH}" "${READ_DIRECTORY}"
+# 		else
+# 			echo "READ_DIRECTORY is not set."
+# 			echo "<p>${READ_DIRECTORY}</p>"
+# 			echo "<br>change config file."
+# 		fi
+# 	else
+# 		echo "${CURRENT_PATH} is not file."
+# 	fi
+# 	unset QUERY["mode"]
+# 	UpLink
+# 	;;
+default|image_viewer)
 	if [[ -d "${CURRENT_PATH}" ]]; then
 		FileBrowser
 	elif [[ -f "${CURRENT_PATH}" ]]; then
 		FileViewer
-		#elif [[ -e "${CURRENT_PATH}" ]];then
-		#echo "-e success<br>"
-		#echo "${CURRENT_PATH}"
 	else
 		echo "-d -f failed<br>"
 		echo "${CURRENT_PATH}"
@@ -1052,6 +1107,9 @@ read)
 		UpLink
 		echo "</p>"
 	fi
+	;;
+*)
+	echo "No Such Mode. ${QUERY[mode]}"
 	;;
 esac
 
