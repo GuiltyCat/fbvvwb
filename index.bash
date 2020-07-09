@@ -155,6 +155,7 @@
 # - `-h`      : Generate markdown document from this script.
 # - `--generate-readme` or `-g`
 #             : Generate README.md from `-h` option's output.
+# - `-c`      : Print default configure file.
 # - otherwise : Ignored.
 # ```
 #
@@ -168,6 +169,9 @@ if [[ "$#" -ne 0 ]]; then
 			;;
 		--generate-readme | -g)
 			bash "$0" -h >"README.md"
+			;;
+		-c)
+			PrintConfig
 			;;
 		*)
 			echo "Such option is not allowed."
@@ -186,55 +190,55 @@ fi
 cat <<EOF
 Content-Type: text/html
 
+<!-- If you run as bash, type Ctrl-D. -->
 EOF
 
-# ## Prepare files
+FBVVWB_CONFIG="/home/$(whoami)/.fbvvwb/config"
+function AddConfig() {
+	if [[ ! -f "${FBVVWB_CONFIG}" ]]; then
+		echo "#!/bin/bash" >"${FBVVWB_CONFIG}"
+	else
+		echo "########## Add New Config ##########"
+	fi
+	PrintConfig >>"${FBVVWB_CONFIG}"
+}
+function PrintConfig() {
+	cat <<EOF >"${FBVVWB_CONFIG}"
+# Default top directory is defined by TOP_DIRECTORY
 #
-# Default top directory is defined by`TOP_DIRECTORY`.
-# You can change by your self
-#
-TOP_DIRECTORY="/home/$(whoami)"
+TOP_DIRECTORY="/home/\$(whoami)"
 
-# If you want to disable trash link.
-# make DISABLE_TRASH="true"
+# Set "true" if you want to disable trash link.
 #
 DISABLE_TRASH="false"
 
-# # FBWWB's temporary directory and files.
-#
-# FBWWB use several temporary directory and files.
-# Default directory is `/home/<usr>/.fbvvwb`
-# defined byu `FBVVWB_DIRECTORY`.
-#
-FBVVWB_DIRECTORY="/home/$(whoami)/.fbvvwb"
-if [[ ! -d "${FBVVWB_DIRECTORY}" ]]; then
-	mkdir -p "${FBVVWB_DIRECTORY}"
-fi
-
-#
-## Read Config File
-#
-
-FBVVWB_CONFIG="${FBVVWB_DIRECTORY}/config"
-function CreateConfig() {
-	cat <<EOF >"${FBVVWB_CONFIG}"
-#!/bin/bash
+# You can set read directory.
+# If you read some comic you can move it to this place.
 READ_DIRECTORY=""
+
+# You can add your own function
 MENU_LINKS=()
 EOF
 }
 if [[ ! -f "${FBVVWB_CONFIG}" ]]; then
-	CreateConfig
+	AddConfig
 fi
+
+TOP_DIRECTORY=""
+FBVVWB_DIRECTORY="/home/$(whoami)/.fbvvwb"
+[[ ! -d "${FBVVWB_DIRECTORY}" ]] && mkdir -p "${FBVVWB_DIRECTORY}"
+
+DISABLE_TRASH="false"
+
 source "${FBVVWB_CONFIG}"
 
+[[ ! -d "${TOP_DIRECTORY}" ]] && TOP_DIRECTORY="/home/$(whoami)"
+
+#
 # FBVVWB save image list for image viewer mode.
 # This list is saved as `${FBVVWB_DIRECTORY}/img_list`.
 #
 FBVVWB_IMG_LIST="${FBVVWB_DIRECTORY}/img_list"
-if [[ ! -f "${FBVVWB_IMG_LIST}" ]]; then
-	: >"${FBVVWB_IMG_LIST}"
-fi
 
 # For future use, FVVWB saves opened file name as history.
 # Default name is `${FBVVWB_DIRECTORY}/history`
@@ -265,10 +269,6 @@ function ParseQuery() {
 	LINE=$1
 	KEY=${LINE%%=*}
 	VALUE=${LINE##*=}
-	# HASH=${VALUE##*#}
-	# if [[ "${HASH}" != "" ]]; then
-	# 	QUERY["hash"]=${HASH}
-	# fi
 	VALUE=${VALUE%%#*}
 	QUERY[${KEY}]=$(nkf -w --url-input <<<"${VALUE}")
 }
@@ -460,6 +460,14 @@ function FileBrowser() {
 #
 # ImageViewer's functions
 # --------------------
+#
+
+function MoveToReadDirLink() {
+	local TMP=${QUERY["mode"]}
+	QUERY["mode"]="read"
+	echo "<a href=\"$(QueryLink)\">Move to read dir</a>"
+	QUERY["mode"]="${TMP}"
+}
 
 function AddToHistory() {
 	LINK=$1
@@ -740,15 +748,6 @@ function ViewerSetting() {
 
 }
 
-function MoveToReadDirLink() {
-	echo "<div style=\"text-align:center\">"
-	local TMP=${QUERY["mode"]}
-	QUERY["mode"]="read"
-	echo "<a href=\"$(QueryLink)\">Move to read dir</a>"
-	QUERY["mode"]="${TMP}"
-	echo "</div>"
-}
-
 function ImageViewer() {
 	#CreateImgIdPath
 	PAGE="${QUERY[page]}"
@@ -834,7 +833,7 @@ function AudioPlayer() {
 function FileViewer() {
 	if [[ "${CURRENT_PATH}" =~ .*\.mp4|.*\.avi|.*\.wmv|.*\.mkv ]]; then
 		VideoPlayer
-	elif [[ "${CURRENT_PATH}" =~ .*\.zip|.*\.rar|.*\.tar|.*\.tar\..* ]]; then
+	elif [[ "${CURRENT_PATH}" =~ .*\.zip|.*\.rar|.*\.tar|.*\.tar\..*|.*\.ZIP ]]; then
 		QUERY["mode"]="manga_viewer"
 		CreateArcImgIdPath
 		ImageViewer
@@ -1004,6 +1003,7 @@ read)
 			mv "${CURRENT_PATH}" "${READ_DIRECTORY}"
 		else
 			echo "READ_DIRECTORY is not set."
+			echo "<p>${READ_DIRECTORY}</p>"
 			echo "<br>change config file."
 		fi
 	else
