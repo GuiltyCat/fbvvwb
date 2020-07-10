@@ -212,11 +212,6 @@ TOP_DIRECTORY="/home/\$(whoami)"
 #
 DISABLE_TRASH="false"
 
-# You can set read directory.
-# If you read some comic you can move it to this place.
-READ_DIRECTORY=""
-AFTER_DIRECTORY=""
-
 # You can add your own directory.
 # trash is special command for trashing a file.
 MOVE_DIRS=("trash")
@@ -483,20 +478,6 @@ function MoveLinks() {
 		echo -n ", "
 	done
 }
-
-# function MoveToAfterDirLink() {
-# 	local TMP=${QUERY["mode"]}
-# 	QUERY["mode"]="after"
-# 	echo "<a href=\"$(QueryLink)\">Move to after dir</a>"
-# 	QUERY["mode"]="${TMP}"
-# }
-# 
-# function MoveToReadDirLink() {
-# 	local TMP=${QUERY["mode"]}
-# 	QUERY["mode"]="read"
-# 	echo "<a href=\"$(QueryLink)\">Move to read dir</a>"
-# 	QUERY["mode"]="${TMP}"
-# }
 
 function AddToHistory() {
 	LINK=$1
@@ -824,9 +805,6 @@ function ImageViewer() {
 	TrashAskLink
 	Menu
 	echo "<hr>"
-	MoveToReadDirLink
-	MoveToAfterDirLink
-	echo "<hr>"
 	MoveLinks
 }
 
@@ -1063,38 +1041,6 @@ move)
 	unset QUERY["move"]
 	UpLink
 	;;
-# after)
-# 	if [[ -f "${CURRENT_PATH}" ]]; then
-# 		if [[ -d "${AFTER_DIRECTORY}" ]]; then
-# 			echo "mv ${CURRENT_PATH} ${AFTER_DIRECTORY}"
-# 			mv "${CURRENT_PATH}" "${AFTER_DIRECTORY}"
-# 		else
-# 			echo "AFTER_DIRECTORY is not set."
-# 			echo "<p>${AFTER_DIRECTORY}</p>"
-# 			echo "<br>change config file."
-# 		fi
-# 	else
-# 		echo "${CURRENT_PATH} is not file."
-# 	fi
-# 	unset QUERY["mode"]
-# 	UpLink
-# 	;;
-# read)
-# 	if [[ -f "${CURRENT_PATH}" ]]; then
-# 		if [[ -d "${READ_DIRECTORY}" ]]; then
-# 			echo "mv ${CURRENT_PATH} ${READ_DIRECTORY}"
-# 			mv "${CURRENT_PATH}" "${READ_DIRECTORY}"
-# 		else
-# 			echo "READ_DIRECTORY is not set."
-# 			echo "<p>${READ_DIRECTORY}</p>"
-# 			echo "<br>change config file."
-# 		fi
-# 	else
-# 		echo "${CURRENT_PATH} is not file."
-# 	fi
-# 	unset QUERY["mode"]
-# 	UpLink
-# 	;;
 default|image_viewer)
 	if [[ -d "${CURRENT_PATH}" ]]; then
 		FileBrowser
