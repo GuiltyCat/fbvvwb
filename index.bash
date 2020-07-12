@@ -227,6 +227,11 @@ fi
 TOP_DIRECTORY=""
 FBVVWB_DIRECTORY="/home/$(whoami)/.fbvvwb"
 [[ ! -d "${FBVVWB_DIRECTORY}" ]] && mkdir -p "${FBVVWB_DIRECTORY}"
+FBVVWB_IMG_DIRECTORY="${FBVVWB_DIRECTORY}/imgs"
+[[ ! -d "${FBVVWB_IMG_DIRECTORY}" ]] && mkdir -p "${FBVVWB_IMG_DIRECTORY}"
+if [[ $(ls -1 "${FBVVWB_IMG_DIRECTORY}" | wc -l) -ge 10 ]]; then
+	rm -f "${FBVVWB_IMG_DIRECTORY}/"*
+fi
 
 DISABLE_TRASH="false"
 
@@ -542,12 +547,17 @@ function GetImgPath() {
 
 	case "$(head -n 1 "${FBVVWB_IMG_LIST}")" in
 	unar)
+		#echo "PAGE=${PAGE}"
 		IMG_ID_PATH=$(GetImgIdPath "${PAGE}")
 		IMG_ID=$(cut -d':' -f1 <<<"${IMG_ID_PATH}")
 		IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
 		EXT=${IMG_PATH##*.}
-		IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.${EXT}"
+		#IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.${EXT}"
+		#"${FBVVWB_IMG_DIRECTORY}/img_${NUM}.${EXT}"
+		IMG_NAME="$(mktemp -p "${FBVVWB_IMG_DIRECTORY}" --suffix=".${EXT}")"
+		chmod a+r "${IMG_NAME}"
 		IMG_ID=$((IMG_ID - 2))
+		#echo "IMGID=${IMG_ID}"
 		unar "${TARGET}" -i "${IMG_ID}" -q -o - >"${IMG_NAME}"
 		echo "${IMG_NAME}"
 		;;
@@ -750,6 +760,7 @@ function ViewerSetting() {
 		QUERY["order"]=${ORDER}
 		QUERY["view_mode"]="single"
 		echo "<a href=\"$(QueryLink)\">Single Page</a>"
+		QUERY["view_mode"]="dual"
 	else
 		QUERY["view_mode"]="dual"
 		echo "<a href=\"$(QueryLink)\">Dual Page</a>"
@@ -759,7 +770,6 @@ function ViewerSetting() {
 }
 
 function ImageViewer() {
-	#CreateImgIdPath
 	PAGE="${QUERY[page]}"
 	if [[ "${PAGE}" -ge "$(GetImgListMax)" ]]; then
 		PAGE=$(GetImgListMax)
@@ -806,6 +816,8 @@ function ImageViewer() {
 	Menu
 	echo "<hr>"
 	MoveLinks
+	echo "<hr>"
+	echo -n "${QUERY[cp]}"
 }
 
 function VideoPlayer() {
@@ -844,7 +856,7 @@ function FileViewer() {
 	if [[ "${CURRENT_PATH}" =~ .*\.mp4|.*\.avi|.*\.wmv|.*\.mkv ]]; then
 		VideoPlayer
 	elif [[ "${CURRENT_PATH}" =~ .*\.zip|.*\.rar|.*\.tar|.*\.tar\..*|.*\.ZIP ]]; then
-		#QUERY["mode"]="manga_viewer"
+		QUERY["mode"]="manga_viewer"
 		CreateArcImgIdPath
 		ImageViewer
 	elif [[ "${CURRENT_PATH}" =~ .*\.jpg|.*\.png|.*\.jpeg|.*\.gif ]]; then
@@ -1008,11 +1020,21 @@ search)
 # 	;;
 move_ask)
 	echo "<div style=\"text-align:center\">"
-	echo "<p>Move ${QUERY[cp]} to ${QUERY[move]}<p>"
+	BUTTON_NAME="Move"
+	if [[ "${QUERY[move]}" = "trash" ]]; then
+		echo "<p>Trash</p><p>${QUERY[cp]}.<p>"
+		BUTTON_NAME="Trash"
+	else
+		echo -n "<p>${QUERY[cp]}</p>"
+		echo -n "<p>|</p>"
+		echo -n "<p>V</p>"
+		echo -n "<p>${QUERY[move]}</p>"
+		echo "<p>Move $(basename "${QUERY[cp]}") to ${QUERY[move]}<p>"
+	fi
 	echo "<p>Are you sure?</p>"
 	echo "<p>"
 	QUERY["mode"]='move'
-	echo "<a href=\"$(QueryLink)\">Move</a>"
+	echo "<a href=\"$(QueryLink)\">${BUTTON_NAME}</a>"
 	unset QUERY["mode"]
 	unset QUERY["move"]
 	echo "<a href=\"$(QueryLink)\">Cancel</a>"
@@ -1036,12 +1058,13 @@ move)
 		echo "<p>${QUERY[move]}</p>"
 		echo "<p>change config file.</p>"
 	fi
-	echo "</div>"
 	unset QUERY["mode"]
 	unset QUERY["move"]
+	Menu
+	echo "</div>"
 	UpLink
 	;;
-default|image_viewer)
+default | image_viewer | manga_viewer)
 	if [[ -d "${CURRENT_PATH}" ]]; then
 		FileBrowser
 	elif [[ -f "${CURRENT_PATH}" ]]; then
