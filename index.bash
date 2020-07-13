@@ -944,7 +944,7 @@ function Search() {
 	unset QUERY["mode"]
 	echo "<h2>Search results</h2>"
 	Menu
-	KEYWORD=${QUERY["keyword"]}
+	KEYWORD=$(sed -e "s/+/ /g" <<<${QUERY["keyword"]})
 	if [[ "${KEYWORD}" == "" ]]; then
 		UpLink
 		return
