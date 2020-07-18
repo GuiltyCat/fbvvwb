@@ -419,14 +419,6 @@ function TrashCommand() {
 	fi
 }
 
-function TrashAskLink() {
-	if [[ "${DISABLE_TRASH}" != "true" ]]; then
-		QUERY["mode"]="trash_ask"
-		echo "<a href=\"$(QueryLink)\">Trash</a>"
-		unset QUERY["mode"]
-	fi
-}
-
 # File Browser
 # ------------
 ##############
@@ -477,11 +469,14 @@ function MoveFileLink() {
 }
 
 function MoveLinks() {
-	echo -n "Move to:"
+	echo -n "<table width=100%><tr>"
+	echo -n "<td>Move to:</td>"
 	for NAME in "${MOVE_DIRS[@]}"; do
+	echo -n "<td>"
 		MoveFileLink "${NAME}"
-		echo -n ", "
+	echo -n "</td>"
 	done
+	echo -n "</tr></table>"
 }
 
 function AddToHistory() {
@@ -628,10 +623,7 @@ function TailLink() {
 
 function JumpLink() {
 	local OFFSET=$1
-	local PLACE=$2
-	#echo -n "<span width=100% style=\"float:${PLACE}\">"
 	PageLink "$((QUERY[page] + OFFSET))" "${OFFSET}"
-	#echo -n "</span>"
 }
 
 function NextLink() {
@@ -682,7 +674,7 @@ function NavigationBar() {
 		echo -n "</td>"
 		for i in $(seq 5); do
 			echo -n "<td>"
-			JumpLink "+$((2 ** i))" "justify"
+			JumpLink "+$((2 ** i))"
 			echo -n "</td>"
 		done
 		echo -n "<td>"
@@ -694,7 +686,7 @@ function NavigationBar() {
 		echo -n "</td>"
 		for i in $(seq 5 | tac); do
 			echo -n "<td>"
-			JumpLink "-$((2 ** i))" "justify"
+			JumpLink "-$((2 ** i))" 
 			echo -n "</td>"
 		done
 		echo -n "<td>"
@@ -702,11 +694,11 @@ function NavigationBar() {
 		echo -n "</td>"
 	else
 		PrevLink "left"
-		JumpLink "-10" "justify"
+		JumpLink "-10" 
 		HeadLink
 		echo "(${QUERY[page]}/$(GetImgListMax))"
 		TailLink
-		JumpLink "+10" "justify"
+		JumpLink "+10" 
 		NextLink "right"
 	fi
 	echo -n "</tr>"
@@ -812,7 +804,6 @@ function ImageViewer() {
 	# page is reset to empty.
 	unset QUERY["page"]
 	BackLink
-	TrashAskLink
 	Menu
 	echo "<hr>"
 	MoveLinks
@@ -883,7 +874,6 @@ function FileViewer() {
 		echo "${CURRENT_PATH}<br>"
 		BackLink
 		echo "<br>"
-		# TrashAskLink
 	fi
 }
 
@@ -992,32 +982,6 @@ history)
 search)
 	Search
 	;;
-# trash_ask)
-# 	echo "<div style=\"text-align:center\">"
-# 	echo "<p>Delete  ${QUERY[cp]}.</p>"
-# 	echo "<p>Are you sure?</p>"
-# 	echo "<p>"
-# 	QUERY["mode"]='trash'
-# 	echo "<a href=\"$(QueryLink)\">Delete</a>"
-# 	unset QUERY["mode"]
-# 	echo "<a href=\"$(QueryLink)\">Cancel</a>"
-# 	echo "</p>"
-# 	echo "</div>"
-# 	;;
-# trash)
-# 	unset QUERY["mode"]
-# 	echo "<div style=\"text-align:center\">"
-# 	if [[ -f "${QUERY[cp]}" ]]; then
-# 		TrashCommand "${QUERY[cp]}"
-# 		echo "Trash ${QUERY[cp]}"
-# 	elif [[ -d "${QUERY[cp]}" ]]; then
-# 		echo "${QUERY[cp]} is directory.<br>For security, deleteing directory is not allowed."
-# 	else
-# 		echo "${QUERY[cp]}<br> does not exist."
-# 	fi
-# 	echo "</div>"
-# 	UpLink
-# 	;;
 move_ask)
 	echo "<div style=\"text-align:center\">"
 	BUTTON_NAME="Move"
