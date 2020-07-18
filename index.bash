@@ -472,9 +472,9 @@ function MoveLinks() {
 	echo -n "<table width=100%><tr>"
 	echo -n "<td>Move to:</td>"
 	for NAME in "${MOVE_DIRS[@]}"; do
-	echo -n "<td>"
+		echo -n "<td>"
 		MoveFileLink "${NAME}"
-	echo -n "</td>"
+		echo -n "</td>"
 	done
 	echo -n "</tr></table>"
 }
@@ -686,7 +686,7 @@ function NavigationBar() {
 		echo -n "</td>"
 		for i in $(seq 5 | tac); do
 			echo -n "<td>"
-			JumpLink "-$((2 ** i))" 
+			JumpLink "-$((2 ** i))"
 			echo -n "</td>"
 		done
 		echo -n "<td>"
@@ -694,11 +694,11 @@ function NavigationBar() {
 		echo -n "</td>"
 	else
 		PrevLink "left"
-		JumpLink "-10" 
+		JumpLink "-10"
 		HeadLink
 		echo "(${QUERY[page]}/$(GetImgListMax))"
 		TailLink
-		JumpLink "+10" 
+		JumpLink "+10"
 		NextLink "right"
 	fi
 	echo -n "</tr>"
@@ -797,18 +797,17 @@ function ImageViewer() {
 
 	echo "<div style=\"text-align:center\">"
 	ViewerSetting
-	echo "</div>"
 	echo "<hr>"
-	echo "<div style=\"text-align:center\">"
 	# If you go to upper directory.
 	# page is reset to empty.
 	unset QUERY["page"]
-	BackLink
-	Menu
-	echo "<hr>"
 	MoveLinks
 	echo "<hr>"
 	echo -n "${QUERY[cp]}"
+	echo "<hr>"
+	echo "</div>"
+	BackLink
+	Menu
 }
 
 function VideoPlayer() {
@@ -996,13 +995,17 @@ move_ask)
 		echo "<p>Move $(basename "${QUERY[cp]}") to ${QUERY[move]}<p>"
 	fi
 	echo "<p>Are you sure?</p>"
-	echo "<p>"
+	# echo "<p>"
+	echo -n "<table width=100%><tr>"
+	echo -n "<td>"
 	QUERY["mode"]='move'
 	echo "<a href=\"$(QueryLink)\">${BUTTON_NAME}</a>"
+	echo -n "</td><td>"
 	unset QUERY["mode"]
 	unset QUERY["move"]
 	echo "<a href=\"$(QueryLink)\">Cancel</a>"
-	echo "</p>"
+	echo -n "</td></tr></table>"
+	# echo "</p>"
 	echo "</div>"
 	;;
 move)
