@@ -36,7 +36,7 @@
 #
 # - Browse files under your home directory (default setting).
 # - View manga and images.
-# 	- Archive is suported (.zip .rar .tar.gz ...)
+# 	- Archive is suported (.zip .rar .tar.gz .cbz ...)
 # 	- Dual page mode is supported.
 # - Watch movies.
 # - Listen musics.
@@ -845,7 +845,7 @@ function AudioPlayer() {
 function FileViewer() {
 	if [[ "${CURRENT_PATH}" =~ .*\.mp4|.*\.avi|.*\.wmv|.*\.mkv ]]; then
 		VideoPlayer
-	elif [[ "${CURRENT_PATH}" =~ .*\.zip|.*\.rar|.*\.tar|.*\.tar\..*|.*\.ZIP ]]; then
+	elif [[ "${CURRENT_PATH}" =~ .*\.zip|.*\.rar|.*\.tar|.*\.tar\..*|.*\.ZIP|.*\.cbz ]]; then
 		QUERY["mode"]="manga_viewer"
 		CreateArcImgIdPath
 		ImageViewer
