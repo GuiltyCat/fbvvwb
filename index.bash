@@ -212,8 +212,13 @@ TOP_DIRECTORY="/home/\$(whoami)"
 #
 DISABLE_TRASH="false"
 
-# You can add your own directory.
+# You can add your own directory to MOVE_DIRS.
+# If you add pathes to MOVE_DIRS, new links are created. 
+# Each name of links is basename of path. It will be directory name.
+# If you click the link, that archive is move to the corresponding directory.
+# This link lead you to ask page, move or cancel.
 # trash is special command for trashing a file.
+# If you add empty string "", it is means new row.
 MOVE_DIRS=("trash")
 
 # You can add your own function
@@ -472,6 +477,10 @@ function MoveLinks() {
 	echo -n "<table width=100%><tr>"
 	echo -n "<td>Move to:</td>"
 	for NAME in "${MOVE_DIRS[@]}"; do
+		if [[ "${NAME}" = "" ]]; then
+			echo -n "</tr><tr></tr><tr><td>Move to :</td>"
+			continue
+		fi
 		echo -n "<td>"
 		MoveFileLink "${NAME}"
 		echo -n "</td>"
@@ -856,10 +865,8 @@ function FileViewer() {
 	elif [[ "${CURRENT_PATH}" =~ .*\.mp3|.*\.flac|.*\.wav ]]; then
 		AudioPlayer
 	elif [[ "${CURRENT_PATH}" =~ .*\.pdf|.*\.PDF ]]; then
-		QUERY["mode"]="pdf_viewer"
 		echo "pdf" >"${FBVVWB_IMG_LIST}"
 		echo "${CURRENT_PATH}" >>"${FBVVWB_IMG_LIST}"
-		#echo "SEQ=$(pdfinfo "${CURRENT_PATH}" | grep -a "Pages" | tr -d ' ' | cut -d':' -f2)"
 		seq "$(pdfinfo "${CURRENT_PATH}" | grep "Pages" | tr -d ' ' | cut -d':' -f2)" >>"${FBVVWB_IMG_LIST}"
 		ImageViewer
 	elif [[ "${CURRENT_PATH}" =~ .*\.txt|.*\.TXT ]]; then
@@ -873,6 +880,7 @@ function FileViewer() {
 		echo "${CURRENT_PATH}<br>"
 		BackLink
 		echo "<br>"
+		Menu
 	fi
 }
 
@@ -884,7 +892,7 @@ function Menu() {
 	echo -n "<span style=\"float:right\">"
 	MODE=${QUERY["mode"]}
 	QUERY["mode"]="history"
-	echo -n "<a href=\"$(QueryLink)\">View History</a>"
+	echo -n "<a href=\"$(QueryLink)\">History</a>"
 
 	#
 	# You can add your own Menu Link.
@@ -1042,6 +1050,7 @@ default | image_viewer | manga_viewer)
 		echo "<p>"
 		UpLink
 		echo "</p>"
+		Menu
 	fi
 	;;
 *)
