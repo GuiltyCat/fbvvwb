@@ -892,7 +892,11 @@ function Menu() {
 	echo -n "<span style=\"float:right\">"
 	MODE=${QUERY["mode"]}
 	QUERY["mode"]="history"
-	echo -n "<a href=\"$(QueryLink)\">History</a>"
+	echo "<a href=\"$(QueryLink)\">History</a>"
+
+	QUERY["mode"]="links"
+	echo "<a href=\"$(QueryLink)\">Links</a>"
+	unset QUERY["mode"]
 
 	#
 	# You can add your own Menu Link.
@@ -980,11 +984,25 @@ cat <<EOF
 <body bgcolor="black" text="gray" link="gray" vlink="gray" alink="gray">
 EOF
 
+
+function MoveDirLinks(){
+	echo -n "<ul>"
+	for NAME in "${MOVE_DIRS[@]}"; do
+		QUERY["cp"]=${NAME}
+		echo -n "<li><a href=\"$(QueryLink)\">${NAME}</a></li>"
+	done
+	echo -n "</ul>"
+}
+
 # Mode selecter for special page.
 case "${QUERY[mode]}" in
 history)
 	unset QUERY["mode"]
 	History
+	;;
+links)
+	unset QUERY["mode"]
+	MoveDirLinks
 	;;
 search)
 	Search
