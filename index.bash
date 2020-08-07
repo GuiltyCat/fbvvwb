@@ -174,7 +174,7 @@ if [[ "$#" -ne 0 ]]; then
 			PrintConfig
 			;;
 		*)
-			echo "Such option is not allowed."
+			echo "Such option do not allowed."
 			;;
 		esac
 		shift
@@ -420,7 +420,12 @@ function UrlPath() {
 function TrashCommand() {
 	if [[ "${DISABLE_TRASH}" != "true" ]]; then
 		FILE="$1"
-		env XDG_DATA_HOME="/home/$(whoami)/.local/share/" trash "${FILE}"
+		if [[ -f "${FILE}" ]]; then
+			env XDG_DATA_HOME="/home/$(whoami)/.local/share/" trash "${FILE}"
+		else
+			echo -n "<p>${FILE} is not exist.</p>"
+			echo -n "<p>Trash failed.</p>"
+		fi
 	fi
 }
 
@@ -550,36 +555,36 @@ function GetImgPath() {
 	TARGET="$(head -n 2 "${FBVVWB_IMG_LIST}" | tail -n 1)"
 
 	case "$(head -n 1 "${FBVVWB_IMG_LIST}")" in
-	unar)
-		#echo "PAGE=${PAGE}"
-		IMG_ID_PATH=$(GetImgIdPath "${PAGE}")
-		IMG_ID=$(cut -d':' -f1 <<<"${IMG_ID_PATH}")
-		IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
-		EXT=${IMG_PATH##*.}
-		#IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.${EXT}"
-		#"${FBVVWB_IMG_DIRECTORY}/img_${NUM}.${EXT}"
-		IMG_NAME="$(mktemp -p "${FBVVWB_IMG_DIRECTORY}" --suffix=".${EXT}")"
-		chmod a+r "${IMG_NAME}"
-		IMG_ID=$((IMG_ID - 2))
-		#echo "IMGID=${IMG_ID}"
-		unar "${TARGET}" -i "${IMG_ID}" -q -o - >"${IMG_NAME}"
-		echo "${IMG_NAME}"
-		;;
-	pdf)
-		local TMP="${FBVVWB_DIRECTORY}/img_tmp"
-		EXT="png"
-		pdftoppm -png -f "${PAGE}" -l "${PAGE}" "${TARGET}" "${TMP}" 2>&1
-		IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.${EXT}"
-		mv "${TMP}-${PAGE}.${EXT}" "${IMG_NAME}"
-		echo "${IMG_NAME}"
-		;;
-	img)
-		IMG_ID_PATH=$(GetImgIdPath "${PAGE}")
-		IMG_ID=$(cut -d':' -f1 <<<"${IMG_ID_PATH}")
-		IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
-		echo "${IMG_PATH}"
-		;;
-	*) ;;
+		unar)
+			#echo "PAGE=${PAGE}"
+			IMG_ID_PATH=$(GetImgIdPath "${PAGE}")
+			IMG_ID=$(cut -d':' -f1 <<<"${IMG_ID_PATH}")
+			IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
+			EXT=${IMG_PATH##*.}
+			#IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.${EXT}"
+			#"${FBVVWB_IMG_DIRECTORY}/img_${NUM}.${EXT}"
+			IMG_NAME="$(mktemp -p "${FBVVWB_IMG_DIRECTORY}" --suffix=".${EXT}")"
+			chmod a+r "${IMG_NAME}"
+			IMG_ID=$((IMG_ID - 2))
+			#echo "IMGID=${IMG_ID}"
+			unar "${TARGET}" -i "${IMG_ID}" -q -o - >"${IMG_NAME}"
+			echo "${IMG_NAME}"
+			;;
+		pdf)
+			local TMP="${FBVVWB_DIRECTORY}/img_tmp"
+			EXT="png"
+			pdftoppm -png -f "${PAGE}" -l "${PAGE}" "${TARGET}" "${TMP}" 2>&1
+			IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.${EXT}"
+			mv "${TMP}-${PAGE}.${EXT}" "${IMG_NAME}"
+			echo "${IMG_NAME}"
+			;;
+		img)
+			IMG_ID_PATH=$(GetImgIdPath "${PAGE}")
+			IMG_ID=$(cut -d':' -f1 <<<"${IMG_ID_PATH}")
+			IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
+			echo "${IMG_PATH}"
+			;;
+		*) ;;
 
 	esac
 }
@@ -996,84 +1001,84 @@ function MoveDirLinks(){
 
 # Mode selecter for special page.
 case "${QUERY[mode]}" in
-history)
-	unset QUERY["mode"]
-	History
-	;;
-links)
-	unset QUERY["mode"]
-	MoveDirLinks
-	;;
-search)
-	Search
-	;;
-move_ask)
-	echo "<div style=\"text-align:center\">"
-	BUTTON_NAME="Move"
-	if [[ "${QUERY[move]}" = "trash" ]]; then
-		echo "<p>Trash</p><p>${QUERY[cp]}.<p>"
-		BUTTON_NAME="Trash"
-	else
-		echo -n "<p>${QUERY[cp]}</p>"
-		echo -n "<p>|</p>"
-		echo -n "<p>V</p>"
-		echo -n "<p>${QUERY[move]}</p>"
-		echo "<p>Move $(basename "${QUERY[cp]}") to ${QUERY[move]}<p>"
-	fi
-	echo "<p>Are you sure?</p>"
-	# echo "<p>"
-	echo -n "<table width=100%><tr>"
-	echo -n "<td>"
-	QUERY["mode"]='move'
-	echo "<a href=\"$(QueryLink)\">${BUTTON_NAME}</a>"
-	echo -n "</td><td>"
-	unset QUERY["mode"]
-	unset QUERY["move"]
-	echo "<a href=\"$(QueryLink)\">Cancel</a>"
-	echo -n "</td></tr></table>"
-	# echo "</p>"
-	echo "</div>"
-	;;
-move)
-	echo "<div style=\"text-align:center\">"
-	if [[ -d "${QUERY[move]}" ]]; then
-		echo "<p>"
-		echo "mv ${QUERY[cp]} ${QUERY[move]}"
-		echo "</p>"
-		mv "${QUERY[cp]}" "${QUERY[move]}"
-	elif [[ "${QUERY[move]}" = "trash" ]]; then
-		echo "<p>"
-		echo "trash ${QUERY[cp]}"
-		echo "</p>"
-		TrashCommand "${QUERY[cp]}"
-	else
-		echo "No such directory."
-		echo "<p>${QUERY[move]}</p>"
-		echo "<p>change config file.</p>"
-	fi
-	unset QUERY["mode"]
-	unset QUERY["move"]
-	Menu
-	echo "</div>"
-	UpLink
-	;;
-default | image_viewer | manga_viewer)
-	if [[ -d "${CURRENT_PATH}" ]]; then
-		FileBrowser
-	elif [[ -f "${CURRENT_PATH}" ]]; then
-		FileViewer
-	else
-		echo "-d -f failed<br>"
-		echo "${CURRENT_PATH}"
-		echo "<p>"
-		UpLink
-		echo "</p>"
+	history)
+		unset QUERY["mode"]
+		History
+		;;
+	links)
+		unset QUERY["mode"]
+		MoveDirLinks
+		;;
+	search)
+		Search
+		;;
+	move_ask)
+		echo "<div style=\"text-align:center\">"
+		BUTTON_NAME="Move"
+		if [[ "${QUERY[move]}" = "trash" ]]; then
+			echo "<p>Trash</p><p>${QUERY[cp]}.<p>"
+			BUTTON_NAME="Trash"
+		else
+			echo -n "<p>${QUERY[cp]}</p>"
+			echo -n "<p>|</p>"
+			echo -n "<p>V</p>"
+			echo -n "<p>${QUERY[move]}</p>"
+			echo "<p>Move $(basename "${QUERY[cp]}") to ${QUERY[move]}<p>"
+		fi
+		echo "<p>Are you sure?</p>"
+		# echo "<p>"
+		echo -n "<table width=100%><tr>"
+		echo -n "<td>"
+		QUERY["mode"]='move'
+		echo "<a href=\"$(QueryLink)\">${BUTTON_NAME}</a>"
+		echo -n "</td><td>"
+		unset QUERY["mode"]
+		unset QUERY["move"]
+		echo "<a href=\"$(QueryLink)\">Cancel</a>"
+		echo -n "</td></tr></table>"
+		# echo "</p>"
+		echo "</div>"
+		;;
+	move)
+		echo "<div style=\"text-align:center\">"
+		if [[ -d "${QUERY[move]}" ]]; then
+			echo "<p>"
+			echo "mv ${QUERY[cp]} ${QUERY[move]}"
+			echo "</p>"
+			mv "${QUERY[cp]}" "${QUERY[move]}"
+		elif [[ "${QUERY[move]}" = "trash" ]]; then
+			echo "<p>"
+			echo "trash ${QUERY[cp]}"
+			echo "</p>"
+			TrashCommand "${QUERY[cp]}"
+		else
+			echo "No such directory."
+			echo "<p>${QUERY[move]}</p>"
+			echo "<p>change config file.</p>"
+		fi
+		unset QUERY["mode"]
+		unset QUERY["move"]
 		Menu
-	fi
-	;;
-*)
-	echo "No Such Mode. ${QUERY[mode]}"
-	;;
+		echo "</div>"
+		UpLink
+		;;
+	default | image_viewer | manga_viewer)
+		if [[ -d "${CURRENT_PATH}" ]]; then
+			FileBrowser
+		elif [[ -f "${CURRENT_PATH}" ]]; then
+			FileViewer
+		else
+			echo "-d -f failed<br>"
+			echo "${CURRENT_PATH}"
+			echo "<p>"
+			UpLink
+			echo "</p>"
+			Menu
+		fi
+		;;
+	*)
+		echo "No Such Mode. ${QUERY[mode]}"
+		;;
 esac
 
 # print footer
