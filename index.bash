@@ -1060,7 +1060,7 @@ case "${QUERY[mode]}" in
 		unset QUERY["move"]
 		Menu
 		echo "</div>"
-		UpLink
+		BackLink
 		;;
 	default | image_viewer | manga_viewer)
 		if [[ -d "${CURRENT_PATH}" ]]; then
