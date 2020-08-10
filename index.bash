@@ -238,6 +238,8 @@ if [[ $(ls -1 "${FBVVWB_IMG_DIRECTORY}" | wc -l) -ge 10 ]]; then
 	rm -f "${FBVVWB_IMG_DIRECTORY}/"*
 fi
 
+FBVVWB_SEARCH_LIST="${FBVVWB_DIRECTORY}/search"
+
 DISABLE_TRASH="false"
 
 source "${FBVVWB_CONFIG}"
@@ -952,16 +954,21 @@ function Search() {
 	Menu
 	KEYWORD=$(sed -e "s/+/ /g" <<<${QUERY["keyword"]})
 	if [[ "${KEYWORD}" == "" ]]; then
-		UpLink
+		BackLink
 		return
 	fi
 	echo "${KEYWORD}"
-	UpLink
+	BackLink
 	echo "<ul>"
+	if [[ ! -e "${FBVVWB_SEARCH_LIST}" ]] || [[ "$(head -n 1 "${FBVVWB_SEARCH_LIST}")" != "${KEYWORD}" ]]; then
+		echo "${KEYWORD}" >"${FBVVWB_SEARCH_LIST}"
+		locate -i "${KEYWORD}" >>"${FBVVWB_SEARCH_LIST}"
+	fi
 	while read -r line; do
 		QUERY["cp"]=${line}
 		echo "<li><a href=\"$(QueryLink)\">${line}</a></li>"
-	done < <(locate -i "${KEYWORD}")
+	done < <(tail -n +2 "${FBVVWB_SEARCH_LIST}")
+
 	echo "</ul>"
 }
 
@@ -1071,7 +1078,7 @@ case "${QUERY[mode]}" in
 			echo "-d -f failed<br>"
 			echo "${CURRENT_PATH}"
 			echo "<p>"
-			UpLink
+			BackLink
 			echo "</p>"
 			Menu
 		fi
