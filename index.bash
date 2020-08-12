@@ -902,8 +902,11 @@ function Menu() {
 	echo "<a href=\"$(QueryLink)\">History</a>"
 
 	QUERY["mode"]="links"
+	KEYWORD=${QUERY["keyword"]}
+	unset QUERY["keyword"]
 	echo "<a href=\"$(QueryLink)\">Links</a>"
 	unset QUERY["mode"]
+	QUERY["keyword"]=${KEYWORD}
 
 	#
 	# You can add your own Menu Link.
@@ -942,7 +945,25 @@ function History() {
 		echo "<li><a href=\"$(QueryLink)\">$(basename "${line}")</a></li>"
 	done < <(tac "${FBVVWB_MANGA_HISTORY}")
 	echo "</ul>"
+	Menu
 }
+
+#
+# Link Mode
+# ---------------
+#
+function MoveDirLinks(){
+	echo "<h2>Links</h2>"
+	BackLink
+	echo -n "<ul>"
+	for NAME in "${MOVE_DIRS[@]}"; do
+		QUERY["cp"]=${NAME}
+		echo -n "<li><a href=\"$(QueryLink)\">${NAME}</a></li>"
+	done
+	echo -n "</ul>"
+	Menu
+}
+
 
 #
 # Search mode
@@ -997,15 +1018,6 @@ cat <<EOF
 EOF
 
 
-function MoveDirLinks(){
-	echo -n "<ul>"
-	for NAME in "${MOVE_DIRS[@]}"; do
-		QUERY["cp"]=${NAME}
-		echo -n "<li><a href=\"$(QueryLink)\">${NAME}</a></li>"
-	done
-	echo -n "</ul>"
-}
-
 # Mode selecter for special page.
 case "${QUERY[mode]}" in
 	history)
@@ -1014,6 +1026,7 @@ case "${QUERY[mode]}" in
 		;;
 	links)
 		unset QUERY["mode"]
+		unset QUERY["keyword"]
 		MoveDirLinks
 		;;
 	search)
