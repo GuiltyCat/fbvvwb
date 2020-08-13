@@ -442,6 +442,7 @@ function FileBrowser() {
 	echo "<h2>${CURRENT_PATH}</h2>"
 	if [[ "${CURRENT_PATH}" != "${TOP_DIRECTORY}" ]]; then
 		BackLink
+		echo "<br>"
 	fi
 	Menu
 	COUNTER=0
@@ -978,8 +979,10 @@ function Search() {
 		BackLink
 		return
 	fi
-	echo "${KEYWORD}"
+	echo "Keyword:${KEYWORD}"
+	echo "<br>"
 	BackLink
+	echo "<br>"
 	echo "<ul>"
 	if [[ ! -e "${FBVVWB_SEARCH_LIST}" ]] || [[ "$(head -n 1 "${FBVVWB_SEARCH_LIST}")" != "${KEYWORD}" ]]; then
 		echo "${KEYWORD}" >"${FBVVWB_SEARCH_LIST}"
@@ -989,7 +992,6 @@ function Search() {
 		QUERY["cp"]=${line}
 		echo "<li><a href=\"$(QueryLink)\">${line}</a></li>"
 	done < <(tail -n +2 "${FBVVWB_SEARCH_LIST}")
-
 	echo "</ul>"
 }
 
