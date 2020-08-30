@@ -558,36 +558,36 @@ function GetImgPath() {
 	TARGET="$(head -n 2 "${FBVVWB_IMG_LIST}" | tail -n 1)"
 
 	case "$(head -n 1 "${FBVVWB_IMG_LIST}")" in
-		unar)
-			#echo "PAGE=${PAGE}"
-			IMG_ID_PATH=$(GetImgIdPath "${PAGE}")
-			IMG_ID=$(cut -d':' -f1 <<<"${IMG_ID_PATH}")
-			IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
-			EXT=${IMG_PATH##*.}
-			#IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.${EXT}"
-			#"${FBVVWB_IMG_DIRECTORY}/img_${NUM}.${EXT}"
-			IMG_NAME="$(mktemp -p "${FBVVWB_IMG_DIRECTORY}" --suffix=".${EXT}")"
-			chmod a+r "${IMG_NAME}"
-			IMG_ID=$((IMG_ID - 2))
-			#echo "IMGID=${IMG_ID}"
-			unar "${TARGET}" -i "${IMG_ID}" -q -o - >"${IMG_NAME}"
-			echo "${IMG_NAME}"
-			;;
-		pdf)
-			local TMP="${FBVVWB_DIRECTORY}/img_tmp"
-			EXT="png"
-			pdftoppm -png -f "${PAGE}" -l "${PAGE}" "${TARGET}" "${TMP}" 2>&1
-			IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.${EXT}"
-			mv "${TMP}-${PAGE}.${EXT}" "${IMG_NAME}"
-			echo "${IMG_NAME}"
-			;;
-		img)
-			IMG_ID_PATH=$(GetImgIdPath "${PAGE}")
-			IMG_ID=$(cut -d':' -f1 <<<"${IMG_ID_PATH}")
-			IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
-			echo "${IMG_PATH}"
-			;;
-		*) ;;
+	unar)
+		#echo "PAGE=${PAGE}"
+		IMG_ID_PATH=$(GetImgIdPath "${PAGE}")
+		IMG_ID=$(cut -d':' -f1 <<<"${IMG_ID_PATH}")
+		IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
+		EXT=${IMG_PATH##*.}
+		#IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.${EXT}"
+		#"${FBVVWB_IMG_DIRECTORY}/img_${NUM}.${EXT}"
+		IMG_NAME="$(mktemp -p "${FBVVWB_IMG_DIRECTORY}" --suffix=".${EXT}")"
+		chmod a+r "${IMG_NAME}"
+		IMG_ID=$((IMG_ID - 2))
+		#echo "IMGID=${IMG_ID}"
+		unar "${TARGET}" -i "${IMG_ID}" -q -o - >"${IMG_NAME}"
+		echo "${IMG_NAME}"
+		;;
+	pdf)
+		local TMP="${FBVVWB_DIRECTORY}/img_tmp"
+		EXT="png"
+		pdftoppm -png -f "${PAGE}" -l "${PAGE}" "${TARGET}" "${TMP}" 2>&1
+		IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.${EXT}"
+		mv "${TMP}-${PAGE}.${EXT}" "${IMG_NAME}"
+		echo "${IMG_NAME}"
+		;;
+	img)
+		IMG_ID_PATH=$(GetImgIdPath "${PAGE}")
+		IMG_ID=$(cut -d':' -f1 <<<"${IMG_ID_PATH}")
+		IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
+		echo "${IMG_PATH}"
+		;;
+	*) ;;
 
 	esac
 }
@@ -684,12 +684,13 @@ function PercentChange() {
 }
 
 function NavigationBar() {
+	local NUM=5
 	echo -n "<table width=100%><tr>"
 	if [[ "${QUERY[order]}" = "rl" ]]; then
 		echo -n "<td>"
 		NextLink "left"
 		echo -n "</td>"
-		for i in $(seq 5); do
+		for i in $(seq "${NUM}"); do
 			echo -n "<td>"
 			JumpLink "+$((2 ** i))"
 			echo -n "</td>"
@@ -701,7 +702,7 @@ function NavigationBar() {
 		echo -n "</td><td>"
 		HeadLink
 		echo -n "</td>"
-		for i in $(seq 5 | tac); do
+		for i in $(seq "${NUM}" | tac); do
 			echo -n "<td>"
 			JumpLink "-$((2 ** i))"
 			echo -n "</td>"
@@ -710,13 +711,29 @@ function NavigationBar() {
 		PrevLink "right"
 		echo -n "</td>"
 	else
+		echo -n "<td>"
 		PrevLink "left"
-		JumpLink "-10"
+		echo -n "</td>"
+		for i in $(seq "${NUM}"); do
+			echo -n "<td>"
+			JumpLink "-$((2 ** i))"
+			echo -n "</td>"
+		done
+		echo -n "<td>"
 		HeadLink
+		echo -n "</td><td>"
 		echo "(${QUERY[page]}/$(GetImgListMax))"
+		echo -n "</td><td>"
 		TailLink
-		JumpLink "+10"
+		echo -n "</td>"
+		for i in $(seq "${NUM}" | tac); do
+			echo -n "<td>"
+			JumpLink "+$((2 ** i))"
+			echo -n "</td>"
+		done
+		echo -n "</td><td>"
 		NextLink "right"
+		echo -n "</td>"
 	fi
 	echo -n "</tr>"
 	echo -n "</table>"
@@ -778,6 +795,20 @@ function ViewerSetting() {
 
 }
 
+function FileSize() {
+	local BYTE
+	BYTE=$(stat -c %s "${QUERY["cp"]}")
+	if [[ "${BYTE}" -le $((2 ** 10)) ]]; then
+		echo -n "${BYTE}[byte]"
+	elif [[ "${BYTE}" -le $((2 ** 20)) ]]; then
+		echo -n "$((BYTE / (2 ** 10))))[KB]"
+	elif [[ "${BYTE}" -le $((2 ** 30)) ]]; then
+		echo -n "$((BYTE / (2 ** 20)))[MB]"
+	else
+		echo -n "$((BYTE / (2 ** 30)))[GB]"
+	fi
+}
+
 function ImageViewer() {
 	PAGE="${QUERY[page]}"
 	if [[ "${PAGE}" -ge "$(GetImgListMax)" ]]; then
@@ -820,7 +851,10 @@ function ImageViewer() {
 	unset QUERY["page"]
 	MoveLinks
 	echo "<hr>"
-	echo -n "${QUERY[cp]}"
+	echo -n "${QUERY[cp]} "
+	FileSize
+	# echo add size of file here
+	# ############################
 	echo "<hr>"
 	echo "</div>"
 	BackLink
@@ -953,7 +987,7 @@ function History() {
 # Link Mode
 # ---------------
 #
-function MoveDirLinks(){
+function MoveDirLinks() {
 	echo "<h2>Links</h2>"
 	BackLink
 	echo -n "<ul>"
@@ -964,7 +998,6 @@ function MoveDirLinks(){
 	echo -n "</ul>"
 	Menu
 }
-
 
 #
 # Search mode
@@ -1019,88 +1052,93 @@ cat <<EOF
 <body bgcolor="black" text="gray" link="gray" vlink="gray" alink="gray">
 EOF
 
-
 # Mode selecter for special page.
 case "${QUERY[mode]}" in
-	history)
-		unset QUERY["mode"]
-		History
-		;;
-	links)
-		unset QUERY["mode"]
-		unset QUERY["keyword"]
-		MoveDirLinks
-		;;
-	search)
-		Search
-		;;
-	move_ask)
-		echo "<div style=\"text-align:center\">"
-		BUTTON_NAME="Move"
-		if [[ "${QUERY[move]}" = "trash" ]]; then
-			echo "<p>Trash</p><p>${QUERY[cp]}.<p>"
-			BUTTON_NAME="Trash"
-		else
-			echo -n "<p>${QUERY[cp]}</p>"
-			echo -n "<p>|</p>"
-			echo -n "<p>V</p>"
-			echo -n "<p>${QUERY[move]}</p>"
-			echo "<p>Move $(basename "${QUERY[cp]}") to ${QUERY[move]}<p>"
-		fi
-		echo "<p>Are you sure?</p>"
-		# echo "<p>"
-		echo -n "<table width=100%><tr>"
-		echo -n "<td>"
-		QUERY["mode"]='move'
-		echo "<a href=\"$(QueryLink)\">${BUTTON_NAME}</a>"
-		echo -n "</td><td>"
-		unset QUERY["mode"]
-		unset QUERY["move"]
-		echo "<a href=\"$(QueryLink)\">Cancel</a>"
-		echo -n "</td></tr></table>"
-		# echo "</p>"
-		echo "</div>"
-		;;
-	move)
-		echo "<div style=\"text-align:center\">"
-		if [[ -d "${QUERY[move]}" ]]; then
-			echo "<p>"
-			echo "mv ${QUERY[cp]} ${QUERY[move]}"
-			echo "</p>"
-			mv "${QUERY[cp]}" "${QUERY[move]}"
-		elif [[ "${QUERY[move]}" = "trash" ]]; then
-			echo "<p>"
-			echo "trash ${QUERY[cp]}"
-			echo "</p>"
-			TrashCommand "${QUERY[cp]}"
-		else
-			echo "No such directory."
-			echo "<p>${QUERY[move]}</p>"
-			echo "<p>change config file.</p>"
-		fi
-		unset QUERY["mode"]
-		unset QUERY["move"]
-		Menu
-		echo "</div>"
+history)
+	unset QUERY["mode"]
+	History
+	;;
+links)
+	unset QUERY["mode"]
+	unset QUERY["keyword"]
+	MoveDirLinks
+	;;
+search)
+	Search
+	;;
+move_ask)
+	echo "<div style=\"text-align:center\">"
+	BUTTON_NAME="Move"
+	if [[ "${QUERY[move]}" = "trash" ]]; then
+		echo -n "<p>Trash</p><p>${QUERY[cp]} "
+		FileSize
+		echo ".<p>"
+		BUTTON_NAME="Trash"
+	else
+		echo -n "<p>${QUERY[cp]} "
+		FileSize
+		"</p>"
+		echo -n "<p>|</p>"
+		echo -n "<p>V</p>"
+		echo -n "<p>${QUERY[move]}</p>"
+		echo -n "<p>Move $(basename "${QUERY[cp]}") to ${QUERY[move]} "
+		FileSize
+		echo -n "<p>"
+	fi
+	echo "<p>Are you sure?</p>"
+	# echo "<p>"
+	echo -n "<table width=100%><tr>"
+	echo -n "<td>"
+	QUERY["mode"]='move'
+	echo "<a href=\"$(QueryLink)\">${BUTTON_NAME}</a>"
+	echo -n "</td><td>"
+	unset QUERY["mode"]
+	unset QUERY["move"]
+	echo "<a href=\"$(QueryLink)\">Cancel</a>"
+	echo -n "</td></tr></table>"
+	# echo "</p>"
+	echo "</div>"
+	;;
+move)
+	echo "<div style=\"text-align:center\">"
+	if [[ -d "${QUERY[move]}" ]]; then
+		echo "<p>"
+		echo "mv ${QUERY[cp]} ${QUERY[move]}"
+		echo "</p>"
+		mv "${QUERY[cp]}" "${QUERY[move]}"
+	elif [[ "${QUERY[move]}" = "trash" ]]; then
+		echo "<p>"
+		echo "trash ${QUERY[cp]}"
+		echo "</p>"
+		TrashCommand "${QUERY[cp]}"
+	else
+		echo "No such directory."
+		echo "<p>${QUERY[move]}</p>"
+		echo "<p>change config file.</p>"
+	fi
+	unset QUERY["mode"]
+	unset QUERY["move"]
+	Menu
+	echo "</div>"
+	BackLink
+	;;
+default | image_viewer | manga_viewer)
+	if [[ -d "${CURRENT_PATH}" ]]; then
+		FileBrowser
+	elif [[ -f "${CURRENT_PATH}" ]]; then
+		FileViewer
+	else
+		echo "-d -f failed<br>"
+		echo "${CURRENT_PATH}"
+		echo "<p>"
 		BackLink
-		;;
-	default | image_viewer | manga_viewer)
-		if [[ -d "${CURRENT_PATH}" ]]; then
-			FileBrowser
-		elif [[ -f "${CURRENT_PATH}" ]]; then
-			FileViewer
-		else
-			echo "-d -f failed<br>"
-			echo "${CURRENT_PATH}"
-			echo "<p>"
-			BackLink
-			echo "</p>"
-			Menu
-		fi
-		;;
-	*)
-		echo "No Such Mode. ${QUERY[mode]}"
-		;;
+		echo "</p>"
+		Menu
+	fi
+	;;
+*)
+	echo "No Such Mode. ${QUERY[mode]}"
+	;;
 esac
 
 # print footer
