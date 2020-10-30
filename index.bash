@@ -257,7 +257,7 @@ FBVVWB_IMG_LIST="${FBVVWB_DIRECTORY}/img_list"
 #
 FBVVWB_MANGA_HISTORY="${FBVVWB_DIRECTORY}/history"
 if [[ ! -f "${FBVVWB_MANGA_HISTORY}" ]]; then
-	: >"${FBVVWB_MANGA_HISTORY}"
+	touch "${FBVVWB_MANGA_HISTORY}"
 fi
 
 #
@@ -931,7 +931,13 @@ function FileViewer() {
 # -----------
 #
 function Menu() {
-	echo -n "<span style=\"float:right\">"
+	echo -n "<span style=\"float:left\">"
+	QUERY["mode"]="search"
+	echo -n "<form style=\"display:inline\" action=\"$(QueryLink)\" method=\"post\">"
+	echo -n "<input type=\"text\" name=\"keyword\">"
+	echo -n "<input type=\"submit\" value=\"Search\">"
+	echo -n "</form>"
+	QUERY["mode"]=${MODE}
 	MODE=${QUERY["mode"]}
 	QUERY["mode"]="history"
 	echo "<a href=\"$(QueryLink)\">History</a>"
@@ -954,15 +960,8 @@ function Menu() {
 			echo "$(eval "${NAME}")"
 		fi
 	done
-
-	QUERY["mode"]="search"
-	echo -n "<form style=\"display:inline\" action=\"$(QueryLink)\" method=\"post\">"
-	echo -n "<input type=\"text\" name=\"keyword\">"
-	echo -n "<input type=\"submit\" value=\"Search\">"
-	echo -n "</form>"
-
 	echo "</span>"
-	QUERY["mode"]=${MODE}
+	echo "<br>"
 }
 
 #
@@ -1118,9 +1117,9 @@ move)
 	fi
 	unset QUERY["mode"]
 	unset QUERY["move"]
+	BackLink
 	Menu
 	echo "</div>"
-	BackLink
 	;;
 default | image_viewer | manga_viewer)
 	if [[ -d "${CURRENT_PATH}" ]]; then
