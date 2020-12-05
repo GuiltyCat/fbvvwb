@@ -54,9 +54,10 @@
 # 	- Apache,....
 # - Bash
 # 	- grep, sed, cut, whoami, :,
-# - unar/lsar
+# - unar/lsar (for unarchiving)
 # - trash-cli
-# - locale
+# - iconv, nkf (for detecting and converting character set)
+# - locale (for searching file)
 #
 # Security
 # --------
@@ -913,7 +914,7 @@ function FileViewer() {
 		ImageViewer
 	elif [[ "${CURRENT_PATH}" =~ .*\.txt|.*\.TXT ]]; then
 		echo "<pre>"
-		cat "${CURRENT_PATH}"
+		iconv -f $(nkf --guess "${CURRENT_PATH}") -t UTF8 "${CURRENT_PATH}"
 		echo "</pre>"
 		BackLink
 
