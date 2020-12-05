@@ -912,7 +912,7 @@ function FileViewer() {
 		echo "${CURRENT_PATH}" >>"${FBVVWB_IMG_LIST}"
 		seq "$(pdfinfo "${CURRENT_PATH}" | grep "Pages" | tr -d ' ' | cut -d':' -f2)" >>"${FBVVWB_IMG_LIST}"
 		ImageViewer
-	elif [[ "${CURRENT_PATH}" =~ .*\.txt|.*\.TXT ]]; then
+	elif [[ "${CURRENT_PATH}" =~ .*\.txt|.*\.TXT|.*\.html ]]; then
 		echo "<pre>"
 		iconv -f $(nkf --guess "${CURRENT_PATH}") -t UTF8 "${CURRENT_PATH}"
 		echo "</pre>"
