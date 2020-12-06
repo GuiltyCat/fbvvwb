@@ -34,7 +34,7 @@ You can
 
 - Browse files under your home directory (default setting).
 - View manga and images.
-	- Archive is suported (.zip .rar .tar.gz ...)
+	- Archive is suported (.zip .rar .tar.gz .cbz ...)
 	- Dual page mode is supported.
 - Watch movies.
 - Listen musics.
@@ -52,9 +52,10 @@ Requirements
 	- Apache,....
 - Bash
 	- grep, sed, cut, whoami, :,
-- unar/lsar
+- unar/lsar (for unarchiving)
 - trash-cli
-- locale
+- iconv, nkf (for detecting and converting character set)
+- locale (for searching file)
 
 Security
 --------
@@ -150,10 +151,10 @@ If there is no options are passed.
 Avairable options are
 
 ```
-- `-h`      : Generate markdown document from this script.
-- `--generate-readme` or `-g`
-            : Generate README.md from `-h` option's output.
-- otherwise : Ignored.
+- `--help` or `-h`            : Generate markdown document from this script.
+- `--generate-readme` or `-g` : Generate README.md from `-h` option's output.
+- `-c`                        : Print default configure file.
+- otherwise                   : Ignored.
 ```
 
 If options are set, this script run as non-CGI mode.
@@ -163,24 +164,19 @@ If options are set, this script run as non-CGI mode.
 Apache requires MIME type.
 `Content-Type: text/html\n\n`
 
-## Prepare files
+Default top directory is defined by TOP_DIRECTORY
 
-Default top directory is defined by`TOP_DIRECTORY`.
-You can change by your self
+Set "true" if you want to disable trash link.
 
-If you want to disable trash link.
-make DISABLE_TRASH="true"
+You can add your own directory to MOVE_DIRS.
+If you add pathes to MOVE_DIRS, new links are created. 
+Each name of links is basename of path. It will be directory name.
+If you click the link, that archive is move to the corresponding directory.
+This link lead you to ask page, move or cancel.
+trash is special command for trashing a file.
+If you add empty string "", it is means new row.
+You can add your own function
 
-# FBWWB's temporary directory and files.
-
-FBWWB use several temporary directory and files.
-Default directory is `/home/<usr>/.fbvvwb`
-defined byu `FBVVWB_DIRECTORY`.
-
-
-Read Config File
-
-!/bin/bash
 FBVVWB save image list for image viewer mode.
 This list is saved as `${FBVVWB_DIRECTORY}/img_list`.
 
@@ -202,10 +198,6 @@ If you use apache.
 
 Unavailable options are ignored.
 
-HASH=${VALUE##*#}
-if [[ "${HASH}" != "" ]]; then
-	QUERY["hash"]=${HASH}
-fi
 
 ### Get query
 
@@ -249,12 +241,15 @@ thus you cannot update COUNTER.
 
 ImageViewer's functions
 --------------------
+
 echo "<!--C_DIR=${C_DIR}-->"
 Because, first line is directory name.
 echo -n "<!- page=${PAGE}->"
+echo "PAGE=${PAGE}"
+IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.${EXT}"
+"${FBVVWB_IMG_DIRECTORY}/img_${NUM}.${EXT}"
+echo "IMGID=${IMG_ID}"
 IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
-echo -n "<span width=100% style=\"float:${PLACE}\">"
-echo -n "</span>"
 local PLACE=$1
 echo -n "<span style=\"float:${PLACE}\">"
 echo -n "</span>"
@@ -262,11 +257,12 @@ local PLACE=$1
 echo -n "<span style=\"float:${PLACE}\">"
 echo -n "</span>"
 echo "<-- IMG_PATH=${IMG_PATH} -->"
-CreateImgIdPath
 0 -> -2, 1 -> +2
 echo "<!-page=${QUERY[page]}->"
 If you go to upper directory.
 page is reset to empty.
+echo add size of file here
+############################
 echo "<video height=\"${HEIGHT}\" muted controls autoplay>"
 
 FileViewer
@@ -274,8 +270,6 @@ FileViewer
 
 Select how to open a selected file.
 
-echo "SEQ=$(pdfinfo "${CURRENT_PATH}" | grep -a "Pages" | tr -d ' ' | cut -d':' -f2)"
-TrashAskLink
 
 Menu
 -----------
@@ -291,6 +285,10 @@ History Mode
 --------------
 
 
+Link Mode
+---------------
+
+
 Search mode
 --------------
 
@@ -300,9 +298,8 @@ main
 
 print header
 Mode selecter for special page.
-elif [[ -e "${CURRENT_PATH}" ]];then
-echo "-e success<br>"
-echo "${CURRENT_PATH}"
+echo "<p>"
+echo "</p>"
 print footer
 
 Apache Setting
