@@ -153,11 +153,10 @@
 # Avairable options are
 #
 # ```
-# - `-h`      : Generate markdown document from this script.
-# - `--generate-readme` or `-g`
-#             : Generate README.md from `-h` option's output.
-# - `-c`      : Print default configure file.
-# - otherwise : Ignored.
+# - `--help` or `-h`            : Generate markdown document from this script.
+# - `--generate-readme` or `-g` : Generate README.md from `-h` option's output.
+# - `-c`                        : Print default configure file.
+# - otherwise                   : Ignored.
 # ```
 #
 # If options are set, this script run as non-CGI mode.
@@ -165,7 +164,7 @@
 if [[ "$#" -ne 0 ]]; then
 	while [[ "$#" -ne 0 ]]; do
 		case "$1" in
-		-h)
+		--help|-h)
 			grep "^\s*#" "$0" | tail -n+3 | sed -e 's/^\s*#\+[ ]\{0,1\}//'
 			;;
 		--generate-readme | -g)
