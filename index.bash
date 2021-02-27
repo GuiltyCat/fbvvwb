@@ -232,7 +232,7 @@ fi
 TOP_DIRECTORY=""
 FBVVWB_DIRECTORY="/home/$(whoami)/.fbvvwb"
 FBVVWB_IMG_DIRECTORY="${FBVVWB_DIRECTORY}/imgs"
-FBVVWB_CURRENT_PATH_FILES="${FBVVWB_DIRECTORY}/current_path_files"
+FBVVWB_CURRENT_DIR_FILES="${FBVVWB_DIRECTORY}/current_path_files"
 FBVVWB_SEARCH_LIST="${FBVVWB_DIRECTORY}/search"
 
 [[ ! -d "${FBVVWB_DIRECTORY}" ]] && mkdir -p "${FBVVWB_DIRECTORY}"
@@ -312,23 +312,20 @@ done
 #
 
 function ReplaceCurrentPathForSecurity() {
-	local CURRENT_PATH
-	CURRENT_PATH=$1
-	if [[ ! CURRENT_PATH =~ /home/$(whoami)/.*|/mnt/.* ]]; then
-		CURRENT_PATH="${TOP_DIRECTORY}/"
+	if [[ QUERY["cp"] =~ /home/$(whoami)/.*|/mnt/.* ]]; then
+		QUERY["cp"]="${TOP_DIRECTORY}/"
 	fi
 	if [[ "${QUERY[cp]}" =~ \.\. ]]; then
-		CURRENT_PATH="${TOP_DIRECTORY}/"
+		QUERY["cp"]="${TOP_DIRECTORY}/"
 	fi
 
 	# ## Set default query (key and value) if empty
-	if [[ "${QUERY[cp]}" == "" ]]; then
-		CURRENT_PATH="${TOP_DIRECTORY}/"
+	if [[ "${QUERY[cp]}" = "" ]]; then
+		QUERY["cp"]="${TOP_DIRECTORY}/"
 	fi
-	return "$CURRENT_PATH"
 }
 
-QUERY["cp"]=ReplaceCurrentPathForSecurity "${QUERY["cp"]}"
+ReplaceCurrentPathForSecurity
 
 # This two hyphen is not equal.
 # 95 is true path.
@@ -336,7 +333,6 @@ QUERY["cp"]=ReplaceCurrentPathForSecurity "${QUERY["cp"]}"
 # —:E2,80,94,
 # ―:E2,80,95,
 QUERY["cp"]=$(sed -e 's/—/―/g' <<<"${QUERY[cp]}")
-
 
 function SetDefaultOption(){
 	if [[ "${QUERY[mode]}" = "" ]]; then
@@ -354,16 +350,17 @@ function SetDefaultOption(){
 		QUERY["percent"]="80"
 	fi
 
-# If page is not set or negative.
-# page is automatically set as 1.
-if [[ "${QUERY[page]}" == "" ]] || [[ "${QUERY[page]}" -le 0 ]]; then
-	QUERY["page"]=1
-fi
+	# If page is not set or negative.
+	# page is automatically set as 1.
+	if [[ "${QUERY[page]}" == "" ]] || [[ "${QUERY[page]}" -le 0 ]]; then
+		QUERY["page"]=1
+	fi
 
-if [[ "${QUERY[order]}" == "" ]]; then
-	QUERY["order"]="rl"
-fi
+	if [[ "${QUERY[order]}" == "" ]]; then
+		QUERY["order"]="rl"
+	fi
 }
+
 SetDefaultOption
 
 CURRENT_PATH=${QUERY[cp]%/}
@@ -399,6 +396,7 @@ function BackLink() {
 function UpLink() {
 	local UPLINK
 	local UPLINK_NUM
+	local CURRENT_PATH
 	UPLINK_NUM="$(HeadUpLinkNum)"
 	local HASH
 	HASH=""
@@ -452,6 +450,7 @@ function TrashCommand() {
 ##############
 
 function FileBrowser() {
+	CURRENT_PATH=${QUERY[cp]}
 	# I want to add link in each folder separated by /
 	# /home/bob/hello/world.txt
 	#   link to each directory
@@ -462,13 +461,6 @@ function FileBrowser() {
 	fi
 	Menu
 	COUNTER=0
-
-	if [[ -d "${CURRENT_PATH}" ]]; then
-		if [[ ! -e "${FBVVWB_CURRENT_PATH_FILES}" ]] || [[ "${CURRENT_PATH}" != $(head -n 1 "${FBVVWB_CURRENT_PATH_FILES}") ]]; then
-			echo "${CURRENT_PATH}" > "${FBVVWB_CURRENT_PATH_FILES}"
-			find -L "${CURRENT_PATH}" -type "${t}" -mindepth 1 -maxdepth 1 -not -name ".*" | sort -V >> "${FBVVWB_CURRENT_PATH_FILES}"
-		fi
-	fi
 
 	echo "<ul>"
 	for t in "d" "f"; do
@@ -485,7 +477,7 @@ function FileBrowser() {
 			echo "<li><a id=\"${COUNTER}\" href=\"$(QueryLink)\">${NAME}</a></li>"
 			PopUpLinkNum
 			COUNTER=$((COUNTER + 1))
-		done < <(tail -n + 2 "${FBVVWB_CURRENT_PATH_FILES}")
+		done < <(find -L "${CURRENT_PATH}" -mindepth 1 -maxdepth 1 -type "${t}" -not -name ".*" | sort -V)
 		echo "<hr>"
 	done
 	echo "</ul>"
@@ -707,6 +699,51 @@ function PercentChange() {
 	fi
 }
 
+function CreateCurrentPathFiles(){
+	DIR_NAME="$(dirname "${QUERY[cp]}")"
+	if [[ ! -e "${FBVVWB_CURRENT_DIR_FILES}" ]] || [[ "${DIR_NAME}" != $(head -n 1 "${FBVVWB_CURRENT_DIR_FILES}") ]]; then
+		echo "${DIR_NAME}" > "${FBVVWB_CURRENT_DIR_FILES}"
+		find -L "${DIR_NAME}" -mindepth 1 -maxdepth 1 -type f -not -name ".*" | sort -V >> "${FBVVWB_CURRENT_DIR_FILES}"
+	fi
+}
+
+function PrevArchiveLink() {
+	CreateCurrentPathFiles
+	if [[ ! -e "${FBVVWB_CURRENT_DIR_FILES}" ]]; then
+		echo "PrevArchive"
+		return
+	fi
+	TMP_CP=${QUERY["cp"]}
+	TMP_PAGE="${QUERY["page"]}"
+
+	QUERY["page"]="0"
+	QUERY["cp"]=$(fgrep -B 2 "${QUERY[cp]}" "${FBVVWB_CURRENT_DIR_FILES}" | head -n 1)
+	local NAME
+	NAME="$(basename "${QUERY[cp]}")"
+	echo -n "<a href=\"$(QueryLink)\">Prev Archive(${NAME})</a>"
+	QUERY["page"]="${TMP_PAGE}"
+	QUERY["cp"]="${TMP_CP}"
+}
+function NextArchiveLink() {
+	CreateCurrentPathFiles
+	if [[ ! -e "${FBVVWB_CURRENT_DIR_FILES}" ]]; then
+		echo "NextArchive"
+		return
+	fi
+	TMP_CP=${QUERY["cp"]}
+	TMP_PAGE="${QUERY["page"]}"
+
+	QUERY["page"]="0"
+	QUERY["cp"]=$(fgrep -A 2 "${QUERY[cp]}" "${FBVVWB_CURRENT_DIR_FILES}" | tail -n 1)
+
+	local NAME
+	NAME=$(basename "${QUERY[cp]}")
+	echo -n "<a href=\"$(QueryLink)\">Next Archive(${NAME})</a>"
+
+	QUERY["page"]="${TMP_PAGE}"
+	QUERY["cp"]="${TMP_CP}"
+}
+
 function NavigationBar() {
 	local NUM=5
 	echo -n "<table width=100%><tr>"
@@ -779,6 +816,16 @@ function NavigationBar() {
 		PercentChange "${i}"
 		echo -n "</td>"
 	done
+	echo -n "</tr></table>"
+
+	# For next and prev archive
+	echo -n "<table width=100%><tr>"
+	echo -n "<td>"
+	PrevArchiveLink
+	echo -n "</td>"
+	echo -n "<td>"
+	NextArchiveLink
+	echo -n "</td>"
 	echo -n "</tr></table>"
 }
 
@@ -1141,6 +1188,15 @@ case "${QUERY[mode]}" in
 		fi
 		unset QUERY["mode"]
 		unset QUERY["move"]
+		echo -n "<table width=100%><tr>"
+		echo -n "<table width=100%><tr>"
+		echo -n "<td>"
+		PrevArchiveLink
+		echo -n "</td>"
+		echo -n "<td>"
+		NextArchiveLink
+		echo -n "</td>"
+		echo -n "</td></tr></table>"
 		BackLink
 		Menu
 		echo "</div>"
