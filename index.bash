@@ -164,7 +164,7 @@
 if [[ "$#" -ne 0 ]]; then
 	while [[ "$#" -ne 0 ]]; do
 		case "$1" in
-		--help|-h)
+		--help | -h)
 			grep "^\s*#" "$0" | tail -n+3 | sed -e 's/^\s*#\+[ ]\{0,1\}//'
 			;;
 		--generate-readme | -g)
@@ -308,17 +308,26 @@ done
 # If symbolic link that points a dangerous place exists,
 # This script cannot prevent access to that dangerous place.
 #
-if [[ ! "${QUERY[cp]}" =~ /home/$(whoami)/.*|/mnt/.* ]]; then
-	QUERY["cp"]="${TOP_DIRECTORY}/"
-fi
-if [[ "${QUERY[cp]}" =~ \.\. ]]; then
-	QUERY["cp"]="${TOP_DIRECTORY}/"
-fi
 
-# ## Set default query (key and value) if empty
-if [[ "${QUERY[cp]}" == "" ]]; then
-	QUERY["cp"]="${TOP_DIRECTORY}/"
-fi
+function ReplaceCurrentPathForSecurity() {
+	local CURRENT_PATH
+	CURRENT_PATH=$1
+	if [[ ! CURRENT_PATH =~ /home/$(whoami)/.*|/mnt/.* ]]; then
+		CURRENT_PATH="${TOP_DIRECTORY}/"
+	fi
+	if [[ "${QUERY[cp]}" =~ \.\. ]]; then
+		CURRENT_PATH="${TOP_DIRECTORY}/"
+	fi
+
+	# ## Set default query (key and value) if empty
+	if [[ "${QUERY[cp]}" == "" ]]; then
+		CURRENT_PATH="${TOP_DIRECTORY}/"
+	fi
+	return "$CURRENT_PATH"
+}
+
+QUERY["cp"]=ReplaceCurrentPathForSecurity "${QUERY["cp"]}"
+
 # This two hyphen is not equal.
 # 95 is true path.
 # Maybe nkf convert 95 to 94.
