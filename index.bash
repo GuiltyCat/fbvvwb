@@ -164,18 +164,18 @@
 if [[ "$#" -ne 0 ]]; then
 	while [[ "$#" -ne 0 ]]; do
 		case "$1" in
-		--help | -h)
-			grep "^\s*#" "$0" | tail -n+3 | sed -e 's/^\s*#\+[ ]\{0,1\}//'
-			;;
-		--generate-readme | -g)
-			bash "$0" -h >"README.md"
-			;;
-		-c)
-			PrintConfig
-			;;
-		*)
-			echo "Such option do not allowed."
-			;;
+			--help | -h)
+				grep "^\s*#" "$0" | tail -n+3 | sed -e 's/^\s*#\+[ ]\{0,1\}//'
+				;;
+			--generate-readme | -g)
+				bash "$0" -h >"README.md"
+				;;
+			-c)
+				PrintConfig
+				;;
+			*)
+				echo "Such option do not allowed."
+				;;
 		esac
 		shift
 	done
@@ -231,14 +231,16 @@ fi
 
 TOP_DIRECTORY=""
 FBVVWB_DIRECTORY="/home/$(whoami)/.fbvvwb"
-[[ ! -d "${FBVVWB_DIRECTORY}" ]] && mkdir -p "${FBVVWB_DIRECTORY}"
 FBVVWB_IMG_DIRECTORY="${FBVVWB_DIRECTORY}/imgs"
+FBVVWB_CURRENT_PATH_FILES="${FBVVWB_DIRECTORY}/current_path_files"
+FBVVWB_SEARCH_LIST="${FBVVWB_DIRECTORY}/search"
+
+[[ ! -d "${FBVVWB_DIRECTORY}" ]] && mkdir -p "${FBVVWB_DIRECTORY}"
 [[ ! -d "${FBVVWB_IMG_DIRECTORY}" ]] && mkdir -p "${FBVVWB_IMG_DIRECTORY}"
 if [[ $(ls -1 "${FBVVWB_IMG_DIRECTORY}" | wc -l) -ge 10 ]]; then
 	rm -f "${FBVVWB_IMG_DIRECTORY}/"*
 fi
 
-FBVVWB_SEARCH_LIST="${FBVVWB_DIRECTORY}/search"
 
 DISABLE_TRASH="false"
 
@@ -335,20 +337,22 @@ QUERY["cp"]=ReplaceCurrentPathForSecurity "${QUERY["cp"]}"
 # ―:E2,80,95,
 QUERY["cp"]=$(sed -e 's/—/―/g' <<<"${QUERY[cp]}")
 
-if [[ "${QUERY[mode]}" = "" ]]; then
-	QUERY["mode"]="default"
-fi
 
-case "${QUERY[view_mode]}" in
-dual | single) ;;
-*)
-	QUERY["view_mode"]="dual"
-	;;
-esac
+function SetDefaultOption(){
+	if [[ "${QUERY[mode]}" = "" ]]; then
+		QUERY["mode"]="default"
+	fi
 
-if [[ "${QUERY[percent]}" == "" ]]; then
-	QUERY["percent"]="80"
-fi
+	case "${QUERY[view_mode]}" in
+		dual | single) ;;
+		*)
+			QUERY["view_mode"]="dual"
+			;;
+	esac
+
+	if [[ "${QUERY[percent]}" == "" ]]; then
+		QUERY["percent"]="80"
+	fi
 
 # If page is not set or negative.
 # page is automatically set as 1.
@@ -359,8 +363,11 @@ fi
 if [[ "${QUERY[order]}" == "" ]]; then
 	QUERY["order"]="rl"
 fi
+}
+SetDefaultOption
 
 CURRENT_PATH=${QUERY[cp]%/}
+
 
 #
 # Prepare functions
@@ -455,6 +462,14 @@ function FileBrowser() {
 	fi
 	Menu
 	COUNTER=0
+
+	if [[ -d "${CURRENT_PATH}" ]]; then
+		if [[ ! -e "${FBVVWB_CURRENT_PATH_FILES}" ]] || [[ "${CURRENT_PATH}" != $(head -n 1 "${FBVVWB_CURRENT_PATH_FILES}") ]]; then
+			echo "${CURRENT_PATH}" > "${FBVVWB_CURRENT_PATH_FILES}"
+			find -L "${CURRENT_PATH}" -type "${t}" -mindepth 1 -maxdepth 1 -not -name ".*" | sort -V >> "${FBVVWB_CURRENT_PATH_FILES}"
+		fi
+	fi
+
 	echo "<ul>"
 	for t in "d" "f"; do
 		# if you pipe this.
@@ -470,7 +485,7 @@ function FileBrowser() {
 			echo "<li><a id=\"${COUNTER}\" href=\"$(QueryLink)\">${NAME}</a></li>"
 			PopUpLinkNum
 			COUNTER=$((COUNTER + 1))
-		done < <(find -L "${CURRENT_PATH}" -type "${t}" -mindepth 1 -maxdepth 1 -not -name ".*" | sort -V)
+		done < <(tail -n + 2 "${FBVVWB_CURRENT_PATH_FILES}")
 		echo "<hr>"
 	done
 	echo "</ul>"
@@ -567,36 +582,36 @@ function GetImgPath() {
 	TARGET="$(head -n 2 "${FBVVWB_IMG_LIST}" | tail -n 1)"
 
 	case "$(head -n 1 "${FBVVWB_IMG_LIST}")" in
-	unar)
-		#echo "PAGE=${PAGE}"
-		IMG_ID_PATH=$(GetImgIdPath "${PAGE}")
-		IMG_ID=$(cut -d':' -f1 <<<"${IMG_ID_PATH}")
-		IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
-		EXT=${IMG_PATH##*.}
-		#IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.${EXT}"
-		#"${FBVVWB_IMG_DIRECTORY}/img_${NUM}.${EXT}"
-		IMG_NAME="$(mktemp -p "${FBVVWB_IMG_DIRECTORY}" --suffix=".${EXT}")"
-		chmod a+r "${IMG_NAME}"
-		IMG_ID=$((IMG_ID - 2))
-		#echo "IMGID=${IMG_ID}"
-		unar "${TARGET}" -i "${IMG_ID}" -q -o - >"${IMG_NAME}"
-		echo "${IMG_NAME}"
-		;;
-	pdf)
-		local TMP="${FBVVWB_DIRECTORY}/img_tmp"
-		EXT="png"
-		pdftoppm -png -f "${PAGE}" -l "${PAGE}" "${TARGET}" "${TMP}" 2>&1
-		IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.${EXT}"
-		mv "${TMP}-${PAGE}.${EXT}" "${IMG_NAME}"
-		echo "${IMG_NAME}"
-		;;
-	img)
-		IMG_ID_PATH=$(GetImgIdPath "${PAGE}")
-		IMG_ID=$(cut -d':' -f1 <<<"${IMG_ID_PATH}")
-		IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
-		echo "${IMG_PATH}"
-		;;
-	*) ;;
+		unar)
+			#echo "PAGE=${PAGE}"
+			IMG_ID_PATH=$(GetImgIdPath "${PAGE}")
+			IMG_ID=$(cut -d':' -f1 <<<"${IMG_ID_PATH}")
+			IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
+			EXT=${IMG_PATH##*.}
+			#IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.${EXT}"
+			#"${FBVVWB_IMG_DIRECTORY}/img_${NUM}.${EXT}"
+			IMG_NAME="$(mktemp -p "${FBVVWB_IMG_DIRECTORY}" --suffix=".${EXT}")"
+			chmod a+r "${IMG_NAME}"
+			IMG_ID=$((IMG_ID - 2))
+			#echo "IMGID=${IMG_ID}"
+			unar "${TARGET}" -i "${IMG_ID}" -q -o - >"${IMG_NAME}"
+			echo "${IMG_NAME}"
+			;;
+		pdf)
+			local TMP="${FBVVWB_DIRECTORY}/img_tmp"
+			EXT="png"
+			pdftoppm -png -f "${PAGE}" -l "${PAGE}" "${TARGET}" "${TMP}" 2>&1
+			IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.${EXT}"
+			mv "${TMP}-${PAGE}.${EXT}" "${IMG_NAME}"
+			echo "${IMG_NAME}"
+			;;
+		img)
+			IMG_ID_PATH=$(GetImgIdPath "${PAGE}")
+			IMG_ID=$(cut -d':' -f1 <<<"${IMG_ID_PATH}")
+			IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
+			echo "${IMG_PATH}"
+			;;
+		*) ;;
 
 	esac
 }
@@ -1062,91 +1077,91 @@ EOF
 
 # Mode selecter for special page.
 case "${QUERY[mode]}" in
-history)
-	unset QUERY["mode"]
-	History
-	;;
-links)
-	unset QUERY["mode"]
-	unset QUERY["keyword"]
-	MoveDirLinks
-	;;
-search)
-	Search
-	;;
-move_ask)
-	echo "<div style=\"text-align:center\">"
-	BUTTON_NAME="Move"
-	if [[ "${QUERY[move]}" = "trash" ]]; then
-		echo -n "<p>Trash</p><p>${QUERY[cp]} "
-		FileSize
-		echo ".<p>"
-		BUTTON_NAME="Trash"
-	else
-		echo -n "<p>${QUERY[cp]} "
-		FileSize
-		"</p>"
-		echo -n "<p>|</p>"
-		echo -n "<p>V</p>"
-		echo -n "<p>${QUERY[move]}</p>"
-		echo -n "<p>Move $(basename "${QUERY[cp]}") to ${QUERY[move]} "
-		FileSize
-		echo -n "<p>"
-	fi
-	echo "<p>Are you sure?</p>"
-	# echo "<p>"
-	echo -n "<table width=100%><tr>"
-	echo -n "<td>"
-	QUERY["mode"]='move'
-	echo "<a href=\"$(QueryLink)\">${BUTTON_NAME}</a>"
-	echo -n "</td><td>"
-	unset QUERY["mode"]
-	unset QUERY["move"]
-	echo "<a href=\"$(QueryLink)\">Cancel</a>"
-	echo -n "</td></tr></table>"
-	# echo "</p>"
-	echo "</div>"
-	;;
-move)
-	echo "<div style=\"text-align:center\">"
-	if [[ -d "${QUERY[move]}" ]]; then
-		echo "<p>"
-		echo "mv ${QUERY[cp]} ${QUERY[move]}"
-		echo "</p>"
-		mv "${QUERY[cp]}" "${QUERY[move]}"
-	elif [[ "${QUERY[move]}" = "trash" ]]; then
-		echo "<p>"
-		echo "trash ${QUERY[cp]}"
-		echo "</p>"
-		TrashCommand "${QUERY[cp]}"
-	else
-		echo "No such directory."
-		echo "<p>${QUERY[move]}</p>"
-		echo "<p>change config file.</p>"
-	fi
-	unset QUERY["mode"]
-	unset QUERY["move"]
-	BackLink
-	Menu
-	echo "</div>"
-	;;
-default | image_viewer | manga_viewer)
-	if [[ -d "${CURRENT_PATH}" ]]; then
-		FileBrowser
-	elif [[ -f "${CURRENT_PATH}" ]]; then
-		FileViewer
-	else
-		echo "-d -f failed<br>"
-		echo "${CURRENT_PATH}"
-		echo "<p>"
+	history)
+		unset QUERY["mode"]
+		History
+		;;
+	links)
+		unset QUERY["mode"]
+		unset QUERY["keyword"]
+		MoveDirLinks
+		;;
+	search)
+		Search
+		;;
+	move_ask)
+		echo "<div style=\"text-align:center\">"
+		BUTTON_NAME="Move"
+		if [[ "${QUERY[move]}" = "trash" ]]; then
+			echo -n "<p>Trash</p><p>${QUERY[cp]} "
+			FileSize
+			echo ".<p>"
+			BUTTON_NAME="Trash"
+		else
+			echo -n "<p>${QUERY[cp]} "
+			FileSize
+			"</p>"
+			echo -n "<p>|</p>"
+			echo -n "<p>V</p>"
+			echo -n "<p>${QUERY[move]}</p>"
+			echo -n "<p>Move $(basename "${QUERY[cp]}") to ${QUERY[move]} "
+			FileSize
+			echo -n "<p>"
+		fi
+		echo "<p>Are you sure?</p>"
+		# echo "<p>"
+		echo -n "<table width=100%><tr>"
+		echo -n "<td>"
+		QUERY["mode"]='move'
+		echo "<a href=\"$(QueryLink)\">${BUTTON_NAME}</a>"
+		echo -n "</td><td>"
+		unset QUERY["mode"]
+		unset QUERY["move"]
+		echo "<a href=\"$(QueryLink)\">Cancel</a>"
+		echo -n "</td></tr></table>"
+		# echo "</p>"
+		echo "</div>"
+		;;
+	move)
+		echo "<div style=\"text-align:center\">"
+		if [[ -d "${QUERY[move]}" ]]; then
+			echo "<p>"
+			echo "mv ${QUERY[cp]} ${QUERY[move]}"
+			echo "</p>"
+			mv "${QUERY[cp]}" "${QUERY[move]}"
+		elif [[ "${QUERY[move]}" = "trash" ]]; then
+			echo "<p>"
+			echo "trash ${QUERY[cp]}"
+			echo "</p>"
+			TrashCommand "${QUERY[cp]}"
+		else
+			echo "No such directory."
+			echo "<p>${QUERY[move]}</p>"
+			echo "<p>change config file.</p>"
+		fi
+		unset QUERY["mode"]
+		unset QUERY["move"]
 		BackLink
-		echo "</p>"
 		Menu
-	fi
-	;;
-*)
-	echo "No Such Mode. ${QUERY[mode]}"
-	;;
+		echo "</div>"
+		;;
+	default | image_viewer | manga_viewer)
+		if [[ -d "${CURRENT_PATH}" ]]; then
+			FileBrowser
+		elif [[ -f "${CURRENT_PATH}" ]]; then
+			FileViewer
+		else
+			echo "-d -f failed<br>"
+			echo "${CURRENT_PATH}"
+			echo "<p>"
+			BackLink
+			echo "</p>"
+			Menu
+		fi
+		;;
+	*)
+		echo "No Such Mode. ${QUERY[mode]}"
+		;;
 esac
 
 # print footer
@@ -1252,3 +1267,7 @@ EOF
 # </IfModule>
 #
 # ```
+
+
+## TODO
+# Some japanese directory or file cannot open.
