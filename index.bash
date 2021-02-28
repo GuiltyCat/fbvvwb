@@ -717,7 +717,7 @@ function PrevArchiveLink() {
 	TMP_PAGE="${QUERY["page"]}"
 
 	QUERY["page"]="0"
-	QUERY["cp"]=$(fgrep -B 2 "${QUERY[cp]}" "${FBVVWB_CURRENT_DIR_FILES}" | head -n 1)
+	QUERY["cp"]=$(fgrep -B 1 "${QUERY[cp]}" "${FBVVWB_CURRENT_DIR_FILES}" | head -n 1)
 	local NAME
 	NAME="$(basename "${QUERY[cp]}")"
 	echo -n "<a href=\"$(QueryLink)\">Prev Archive(${NAME})</a>"
@@ -734,7 +734,7 @@ function NextArchiveLink() {
 	TMP_PAGE="${QUERY["page"]}"
 
 	QUERY["page"]="0"
-	QUERY["cp"]=$(fgrep -A 2 "${QUERY[cp]}" "${FBVVWB_CURRENT_DIR_FILES}" | tail -n 1)
+	QUERY["cp"]=$(fgrep -A 1 "${QUERY[cp]}" "${FBVVWB_CURRENT_DIR_FILES}" | tail -n 1)
 
 	local NAME
 	NAME=$(basename "${QUERY[cp]}")
