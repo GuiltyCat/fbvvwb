@@ -1210,6 +1210,17 @@ case "${QUERY[mode]}" in
 			echo "-d -f failed<br>"
 			echo "${CURRENT_PATH}"
 			echo "<p>"
+			echo -n "<table width=100%><tr>"
+			echo -n "<table width=100%><tr>"
+			echo -n "<td>"
+			PrevArchiveLink
+			echo -n "</td>"
+			echo -n "<td>"
+			NextArchiveLink
+			echo -n "</td>"
+			echo -n "</td></tr></table>"
+			echo "</p>"
+			echo "<p>"
 			BackLink
 			echo "</p>"
 			Menu
