@@ -41,6 +41,7 @@
 # - Watch movies.
 # - Listen musics.
 # - Trash files.
+# - Bookmark archive, page and status link.
 #
 # This script is supported to work in Local Area Network (LAN).
 # ***NEVER ALLOW ACCESS TO THIS SCRIPT WITHOUT YOU!***
@@ -234,6 +235,7 @@ FBVVWB_DIRECTORY="/home/$(whoami)/.fbvvwb"
 FBVVWB_IMG_DIRECTORY="${FBVVWB_DIRECTORY}/imgs"
 FBVVWB_CURRENT_DIR_FILES="${FBVVWB_DIRECTORY}/dir_files"
 FBVVWB_SEARCH_LIST="${FBVVWB_DIRECTORY}/search"
+FBVVWB_BOOKMARK="${FBVVWB_DIRECTORY}/bookmark"
 
 [[ ! -d "${FBVVWB_DIRECTORY}" ]] && mkdir -p "${FBVVWB_DIRECTORY}"
 [[ ! -d "${FBVVWB_IMG_DIRECTORY}" ]] && mkdir -p "${FBVVWB_IMG_DIRECTORY}"
@@ -254,7 +256,7 @@ source "${FBVVWB_CONFIG}"
 #
 FBVVWB_IMG_LIST="${FBVVWB_DIRECTORY}/img_list"
 
-# For future use, FVVWB saves opened file name as history.
+# FVVWB saves opened file name as history.
 # Default name is `${FBVVWB_DIRECTORY}/history`
 #
 FBVVWB_MANGA_HISTORY="${FBVVWB_DIRECTORY}/history"
@@ -512,7 +514,7 @@ function MoveLinks() {
 	echo -n "</tr></table>"
 }
 
-function AddToHistory() {
+function AppendToHistory() {
 	LINK=$1
 	if [[ "$(tail -n 1 "${FBVVWB_MANGA_HISTORY}")" != "${LINK}" ]]; then
 		echo "${LINK}" >>"${FBVVWB_MANGA_HISTORY}"
@@ -522,7 +524,7 @@ function AddToHistory() {
 function CreateArcImgIdPath() {
 	if [[ ! -e "${FBVVWB_IMG_LIST}" ]] || [[ $(head -n 1 "${FBVVWB_IMG_LIST}") != "${CURRENT_PATH}" ]]; then
 		echo "unar" >"${FBVVWB_IMG_LIST}"
-		AddToHistory "${CURRENT_PATH}"
+		AppendToHistory "${CURRENT_PATH}"
 		echo "${CURRENT_PATH}" >>"${FBVVWB_IMG_LIST}"
 		lsar "${CURRENT_PATH}" | grep -i -n -e ".jpg" -e ".jpeg" -e ".png" | sort -V -k2 -t ":" >>"${FBVVWB_IMG_LIST}"
 	fi
@@ -744,6 +746,13 @@ function NextArchiveLink() {
 	QUERY["cp"]="${TMP_CP}"
 }
 
+function AppendToBookmark(){
+	MODE="${QUERY[mode]}"
+	QUERY["mode"]="append_bookmark"
+	echo -n "<a href=\"$(QueryLink)\">Bookmark Here</a>"
+	QUERY["mode"]="${MODE}"
+}
+
 function NavigationBar() {
 	local NUM=5
 	echo -n "<table width=100%><tr>"
@@ -822,6 +831,9 @@ function NavigationBar() {
 	echo -n "<table width=100%><tr>"
 	echo -n "<td>"
 	PrevArchiveLink
+	echo -n "</td>"
+	echo -n "<td>"
+	AppendToBookmark
 	echo -n "</td>"
 	echo -n "<td>"
 	NextArchiveLink
@@ -1013,6 +1025,11 @@ function Menu() {
 	QUERY["mode"]="history"
 	echo "<a href=\"$(QueryLink)\">History</a>"
 
+	QUERY["mode"]=${MODE}
+	MODE=${QUERY["mode"]}
+	QUERY["mode"]="bookmark"
+	echo "<a href=\"$(QueryLink)\">Bookmark</a>"
+
 	QUERY["mode"]="links"
 	KEYWORD=${QUERY["keyword"]}
 	unset QUERY["keyword"]
@@ -1132,6 +1149,33 @@ case "${QUERY[mode]}" in
 		unset QUERY["mode"]
 		unset QUERY["keyword"]
 		MoveDirLinks
+		;;
+	append_bookmark)
+		echo "<div style=\"text-align:center\">"
+		echo "Append ${QUERY[cp]}, Page ${QUERY[page]} to Bookmark."
+		QUERY["mode"]="default"
+		LINK=$(QueryLink)
+		DATE=$(date +'%Y/%m/%d %H:%M:%S')
+		PAGE=$(sed -e 's/.*page=\([^\&]*\)\&.*/\1/' <<<"${LINK}")
+		NAME=$(sed -e 's/.*cp=\([^\&]*\)\&.*/\1/' <<<"${LINK}")
+		sed -i "/${NAME}/d" "${FBVVWB_BOOKMARK}"
+		echo "${DATE},${NAME},${PAGE},${LINK}" >>"${FBVVWB_BOOKMARK}"
+		echo "<p>"
+		BackLink
+		Menu
+		echo "<p>"
+		echo "</div>"
+		;;
+	bookmark)
+		echo "<h2>Bookmark</h2>"
+		BackLink
+		echo "<br>"
+		Menu
+		echo "<ul>"
+		while IFS=, read -r DATE NAME PAGE LINK; do
+			echo "<li><a href=\"${LINK}\">${DATE}, Page${PAGE}, ${NAME}</a></li>"
+		done <<<"$(tac "${FBVVWB_BOOKMARK}")"
+		echo "</ul>"
 		;;
 	search)
 		Search
