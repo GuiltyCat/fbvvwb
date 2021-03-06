@@ -749,7 +749,7 @@ function NextArchiveLink() {
 function AppendToBookmark(){
 	MODE="${QUERY[mode]}"
 	QUERY["mode"]="append_bookmark"
-	echo -n "<a href=\"$(QueryLink)\">Bookmark Here</a>"
+	echo -n "<a href=\"$(QueryLink)\">Bookmark this page</a>"
 	QUERY["mode"]="${MODE}"
 }
 
