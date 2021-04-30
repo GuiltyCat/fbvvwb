@@ -527,6 +527,7 @@ function CreateArcImgIdPath() {
 		AppendToHistory "${CURRENT_PATH}"
 		echo "${CURRENT_PATH}" >>"${FBVVWB_IMG_LIST}"
 		lsar "${CURRENT_PATH}" | grep -i -n -e ".jpg" -e ".jpeg" -e ".png" | sort -V -k2 -t ":" >>"${FBVVWB_IMG_LIST}"
+		#lsar "${CURRENT_PATH}" | grep -i -n -e ".jpg" -e ".jpeg" -e ".png" >>"${FBVVWB_IMG_LIST}"
 	fi
 }
 
