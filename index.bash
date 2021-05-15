@@ -429,7 +429,7 @@ function QueryLink() {
 }
 
 function UrlPath() {
-	echo "${@/\/home\//\/\~}"
+	echo "${@/\/home\//\/\~}" | sed -e 's/#/%23/g'
 }
 
 # ## Trash functions
