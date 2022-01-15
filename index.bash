@@ -988,7 +988,7 @@ function FileViewer() {
 		CreateDirImgIdPath
 		QUERY["mode"]="image_viewer"
 		ImageViewer
-	elif [[ "${CURRENT_PATH}" =~ .*\.mp3|.*\.flac|.*\.wav ]]; then
+	elif [[ "${CURRENT_PATH}" =~ .*\.mp3|.*\.flac|.*\.wav|.*\.m4a ]]; then
 		AudioPlayer
 	elif [[ "${CURRENT_PATH}" =~ .*\.pdf|.*\.PDF ]]; then
 		echo "pdf" >"${FBVVWB_IMG_LIST}"
@@ -1137,7 +1137,7 @@ cat <<EOF
 <meta charset="UTF-8">
 <title>${CURRENT_PATH}</title>
 </head>
-<body bgcolor="black" text="gray" link="gray" vlink="gray" alink="gray">
+<body bgcolor="black" text="gray" link="gray" vlink="gray" alink="gray" style="font-size:30px;">
 EOF
 
 # Mode selecter for special page.
