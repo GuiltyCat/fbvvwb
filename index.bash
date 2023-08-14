@@ -167,6 +167,7 @@
 #
 # If options are set, this script run as non-CGI mode.
 #
+
 if [[ "$#" -ne 0 ]]; then
 	while [[ "$#" -ne 0 ]]; do
 		case "$1" in
@@ -325,6 +326,7 @@ done
 # This script cannot prevent access to that dangerous place.
 #
 
+# ORIGINAL_CP="${QUERY[cp]}"
 [[ "${QUERY[cp]}" =~ \.\. ]] || [[ "${QUERY[cp]}" = "" ]] && QUERY["cp"]="${TOP_DIRECTORY}/"
 
 # This two hyphen is not equal.
@@ -450,13 +452,13 @@ function FileBrowser() {
 			NAME=$(basename "${i}")
 			[[ "${t}" == "d" ]] && NAME="${NAME}/"
 			PushUpLinkNum "${COUNTER}"
-			FILE_LIST="${FILE_LIST}<li><a id=\"${COUNTER}\" href=\"$(QueryLink)\">${NAME}</a></li>"
+			FILE_LIST="${FILE_LIST}<li><a id=\"${COUNTER}\" href=\"$(QueryLink)\">${NAME}</a></li>\n"
 			PopUpLinkNum
 			COUNTER=$((COUNTER + 1))
 		done < <(find -L "${CURRENT_PATH}" -mindepth 1 -maxdepth 1 -type "${t}" -not -name ".*" | sort -V)
 		FILE_LIST="${FILE_LIST}<hr>"
 	done
-	echo "${FILE_LIST}</ul></div>"
+	echo -e "${FILE_LIST}</ul></div>"
 }
 
 #
