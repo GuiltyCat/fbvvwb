@@ -442,7 +442,7 @@ function FileBrowser() {
 	Menu
 	COUNTER=0
 
-	FILE_LIST="<div><ul>"
+	echo -n "<div><ul>"
 	for t in "d" "f"; do
 		# if you pipe this.
 		# sub process  is created,
@@ -452,13 +452,13 @@ function FileBrowser() {
 			NAME=$(basename "${i}")
 			[[ "${t}" == "d" ]] && NAME="${NAME}/"
 			PushUpLinkNum "${COUNTER}"
-			FILE_LIST="${FILE_LIST}<li><a id=\"${COUNTER}\" href=\"$(QueryLink)\">${NAME}</a></li>\n"
+			echo -e "<li><a id=\"${COUNTER}\" href=\"$(QueryLink)\">${NAME}</a></li>\n"
 			PopUpLinkNum
 			COUNTER=$((COUNTER + 1))
 		done < <(find -L "${CURRENT_PATH}" -mindepth 1 -maxdepth 1 -type "${t}" -not -name ".*" | sort -V)
-		FILE_LIST="${FILE_LIST}<hr>"
+		echo -n "<hr>"
 	done
-	echo -e "${FILE_LIST}</ul></div>"
+	echo -n "</ul></div>"
 }
 
 #
@@ -884,7 +884,58 @@ function AudioPlayer() {
 	cat <<EOF
 $(basename "${QUERY[cp]}")<br>
 <div style="text-align:center">
-<audio style="width:100%" src="$(UrlPath "${QUERY[cp]}")" controls autoplay align="center"></audio>
+<audio id="audioPlayer" style="width:100%" src="$(UrlPath "${QUERY[cp]}")" controls autoplay align="center"></audio>
+
+<button id="skipBackwardButton"><<</button>
+<button id="playPauseButton">|></button>
+<button id="skipForwardButton">>></button>
+
+<br>
+<label for="skipAmount">Jump: </label>
+<select id="skipAmount">
+    <option value="1">1s</option>
+    <option value="3">3s</option>
+    <option value="5" selected>5s</option>
+    <option value="10">10s</option>
+    <option value="30">30s</option>
+    <option value="60">1m</option>
+    <option value="300">5m</option>
+    <option value="600">10m</option>
+</select>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var audio = document.getElementById('audioPlayer');
+        var playPauseButton = document.getElementById('playPauseButton');
+        var skipForwardButton = document.getElementById('skipForwardButton');
+        var skipBackwardButton = document.getElementById('skipBackwardButton');
+
+		var skipAmountSelect = document.getElementById('skipAmount');
+        var skipButton = document.getElementById('skipButton');
+
+        playPauseButton.addEventListener('click', function () {
+            if (audio.paused) {
+                audio.play();
+                playPauseButton.textContent = '||';
+            } else {
+                audio.pause();
+                playPauseButton.textContent = '|>';
+            }
+        });
+
+        skipForwardButton.addEventListener('click', function () {
+			var selectedSkipAmount = parseInt(skipAmountSelect.value, 10);
+            audio.currentTime += selectedSkipAmount;
+        });
+
+        skipBackwardButton.addEventListener('click', function () {
+			var selectedSkipAmount = parseInt(skipAmountSelect.value, 10);
+            audio.currentTime -= selectedSkipAmount;
+        });
+
+    });
+</script>
 </div>
 <p>$(BackLink)</p>
 EOF
@@ -1063,6 +1114,18 @@ cat <<EOF
 <html>
 <head>
 <meta charset="UTF-8">
+  <style>
+        button {
+            margin: 30px;
+            padding: 15px; /* パディングを追加してボタンの大きさを調整 */
+            font-size: 30px; /* フォントサイズを調整 */
+        }
+        select {
+            margin: 5px;
+            padding: 10px; /* パディングを追加してボタンの大きさを調整 */
+            font-size: 30px; /* フォントサイズを調整 */
+        }
+    </style>
 <title>${CURRENT_PATH}</title>
 </head>
 <body bgcolor="black" text="gray" link="gray" vlink="gray" alink="gray" style="font-size:30px;">
