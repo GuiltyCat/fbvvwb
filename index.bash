@@ -399,6 +399,7 @@ function QueryLink() {
 	# QUERY["cp"]=$(echo "${QUERY[cp]}" | nkf -WwMQ | sed 's/=$//g' | tr '=' '%' | tr -d '\n')
 	QUERY["cp"]=$(printf '%b\n' "${QUERY[cp]//%/\\x}")
 	QUERY["cp"]="${QUERY[cp]//#/%23}"
+	QUERY["cp"]="${QUERY[cp]//&/%26}"
 	for KEY in "${!QUERY[@]}"; do
 		VALUE=${QUERY[${KEY}]}
 		LINK="${LINK}&${KEY}=${VALUE}"
@@ -407,7 +408,7 @@ function QueryLink() {
 }
 
 function UrlPath() {
-	echo "${@/\/home\//\/\~}" | sed -e 's/#/%23/g'
+	echo "${@/\/home\//\/\~}" | sed -e 's/#/%23/g' | sed -e 's/&/%26/g'
 }
 
 # ## Trash functions
@@ -1117,13 +1118,13 @@ cat <<EOF
   <style>
         button {
             margin: 30px;
-            padding: 15px; /* パディングを追加してボタンの大きさを調整 */
-            font-size: 30px; /* フォントサイズを調整 */
+            padding: 15px;
+            font-size: 30px;
         }
         select {
             margin: 5px;
-            padding: 10px; /* パディングを追加してボタンの大きさを調整 */
-            font-size: 30px; /* フォントサイズを調整 */
+            padding: 10px;
+            font-size: 30px;
         }
     </style>
 <title>${CURRENT_PATH}</title>
