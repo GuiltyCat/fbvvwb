@@ -873,9 +873,59 @@ function VideoPlayer() {
 	cat <<EOF
 $(basename "${QUERY[cp]}")<br>
 <div style="text-align:center">
-<video width=100% muted controls autoplay playinline>
+<video id="videoPlayer" width=100% muted controls autoplay playinline>
 <source src="$(UrlPath "${QUERY[cp]}")" type="video/mp4">
 </video>
+<button id="skipBackwardButton"><<</button>
+<button id="playPauseButton">|></button>
+<button id="skipForwardButton">>></button>
+
+<br>
+<label for="skipAmount">Jump: </label>
+<select id="skipAmount">
+    <option value="1">1s</option>
+    <option value="3">3s</option>
+    <option value="5" selected>5s</option>
+    <option value="10">10s</option>
+    <option value="30">30s</option>
+    <option value="60">1m</option>
+    <option value="300">5m</option>
+    <option value="600">10m</option>
+</select>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var video = document.getElementById('videoPlayer');
+        var playPauseButton = document.getElementById('playPauseButton');
+        var skipForwardButton = document.getElementById('skipForwardButton');
+        var skipBackwardButton = document.getElementById('skipBackwardButton');
+
+		var skipAmountSelect = document.getElementById('skipAmount');
+        var skipButton = document.getElementById('skipButton');
+
+        playPauseButton.addEventListener('click', function () {
+            if (video.paused) {
+                video.play();
+                playPauseButton.textContent = '||';
+            } else {
+                video.pause();
+                playPauseButton.textContent = '|>';
+            }
+        });
+
+        skipForwardButton.addEventListener('click', function () {
+			var selectedSkipAmount = parseInt(skipAmountSelect.value, 10);
+            video.currentTime += selectedSkipAmount;
+        });
+
+        skipBackwardButton.addEventListener('click', function () {
+			var selectedSkipAmount = parseInt(skipAmountSelect.value, 10);
+            video.currentTime -= selectedSkipAmount;
+        });
+
+    });
+</script>
 </div>
 <p>$(BackLink)</p>
 EOF
