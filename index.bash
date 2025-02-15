@@ -316,20 +316,22 @@ for i in $(cat - | tr '&' ' '); do
 done
 
 # Verifycation
-# PASSWORD_FILE="/home/$(users)/apache_password.txt"
-# if [[ ! -f "${PASSWORD_FILE}" ]]; then
-#     echo "Failed!"
-#     exit
-# fi
-# PASSWORD=$(cat "${PASSWORD_FILE}")
-# if [[ "${QUERY[username]}" != "$(users)" || "${PASSWORD}" == "${INVALID}" ]]; then
-#     echo "Failed!"
-#     exit
-# fi
-# if [[ "${QUERY[password]}" != "${PASSWORD}" ]]; then
-#     echo "Failed!"
-#     exit
-# fi
+PASSWORD_FILE="/home/$(users)/.httppass.txt"
+if [[ ! -f "${PASSWORD_FILE}" ]]; then
+    echo "Failed!"
+    exit
+fi
+PASSWORD=$(cat "${PASSWORD_FILE}")
+if [[ "${QUERY[username]}" != "$(users)" || "${PASSWORD}" == "${INVALID}" ]]; then
+    echo "upFailed!"
+    echo "$(users)"
+    echo "${QUERY[username]}"
+    exit
+fi
+if [[ "${QUERY[password]}" != "${PASSWORD}" ]]; then
+    echo "Failed!"
+    exit
+fi
 
 # ## For Security
 #
@@ -1181,21 +1183,26 @@ cat <<EOF
 <html>
 <head>
 <meta charset="UTF-8">
-  <style>
-        button {
-            margin: 30px;
-            padding: 15px;
-            font-size: 30px;
-        }
-        select {
-            margin: 5px;
-            padding: 10px;
-            font-size: 30px;
-        }
-    </style>
+<style>
+    button {
+        margin: 30px;
+        padding: 15px;
+        font-size: 30px;
+    }
+    input {
+        margin: 20px;
+        padding: 5px;
+        font-size: 25px;
+    }
+    select {
+        margin: 5px;
+        padding: 10px;
+        font-size: 30px;
+    }
+</style>
 <title>${CURRENT_PATH}</title>
 </head>
-<body bgcolor="black" text="gray" link="gray" vlink="gray" alink="gray" style="font-size:30px;">
+<body bgcolor="gray" text="black" link="black" vlink="black" alink="black" style="font-size:30px;">
 EOF
 
 # Mode selecter for special page.
