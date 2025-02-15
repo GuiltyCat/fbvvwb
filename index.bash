@@ -169,24 +169,24 @@
 #
 
 if [[ "$#" -ne 0 ]]; then
-	while [[ "$#" -ne 0 ]]; do
-		case "$1" in
-		--help | -h)
-			grep "^\s*#" "$0" | tail -n+3 | sed -e 's/^\s*#\+[ ]\{0,1\}//'
-			;;
-		--generate-readme | -g)
-			bash "$0" -h >"README.md"
-			;;
-		-c)
-			PrintConfig
-			;;
-		*)
-			echo "Such option do not allowed."
-			;;
-		esac
-		shift
-	done
-	exit
+    while [[ "$#" -ne 0 ]]; do
+        case "$1" in
+        --help | -h)
+            grep "^\s*#" "$0" | tail -n+3 | sed -e 's/^\s*#\+[ ]\{0,1\}//'
+            ;;
+        --generate-readme | -g)
+            bash "$0" -h >"README.md"
+            ;;
+        -c)
+            PrintConfig
+            ;;
+        *)
+            echo "Such option do not allowed."
+            ;;
+        esac
+        shift
+    done
+    exit
 fi
 
 # ## MIME type
@@ -203,7 +203,7 @@ EOF
 FBVVWB_CONFIG="/home/$(whoami)/.fbvvwb/config"
 
 function PrintConfig() {
-	cat <<EOF >"${FBVVWB_CONFIG}"
+    cat <<EOF >"${FBVVWB_CONFIG}"
 # Default top directory is defined by TOP_DIRECTORY
 #
 TOP_DIRECTORY="/home/\$(whoami)"
@@ -227,16 +227,16 @@ EOF
 }
 
 function AddConfig() {
-	if [[ ! -f "${FBVVWB_CONFIG}" ]]; then
-		echo "#!/bin/bash" >"${FBVVWB_CONFIG}"
-	else
-		echo "########## Add New Config ##########"
-	fi
-	PrintConfig >>"${FBVVWB_CONFIG}"
+    if [[ ! -f "${FBVVWB_CONFIG}" ]]; then
+        echo "#!/bin/bash" >"${FBVVWB_CONFIG}"
+    else
+        echo "########## Add New Config ##########"
+    fi
+    PrintConfig >>"${FBVVWB_CONFIG}"
 }
 
 if [[ ! -f "${FBVVWB_CONFIG}" ]]; then
-	AddConfig
+    AddConfig
 fi
 
 TOP_DIRECTORY=""
@@ -249,7 +249,7 @@ FBVVWB_BOOKMARK="${FBVVWB_DIRECTORY}/bookmark"
 [[ ! -d "${FBVVWB_DIRECTORY}" ]] && mkdir -p "${FBVVWB_DIRECTORY}"
 [[ ! -d "${FBVVWB_IMG_DIRECTORY}" ]] && mkdir -p "${FBVVWB_IMG_DIRECTORY}"
 if [[ $(find "${FBVVWB_IMG_DIRECTORY}" -type f | wc -l) -ge 10 ]]; then
-	rm -f "${FBVVWB_IMG_DIRECTORY}/"*
+    rm -f "${FBVVWB_IMG_DIRECTORY}/"*
 fi
 
 DISABLE_TRASH="false"
@@ -295,25 +295,41 @@ FBVVWB_MANGA_HISTORY="${FBVVWB_DIRECTORY}/history"
 declare -A QUERY
 
 function ParseQuery() {
-	LINE=$1
-	KEY=${LINE%%=*}
-	VALUE=${LINE##*=}
-	VALUE=${VALUE%%#*}
-	QUERY[${KEY}]=$(nkf -w --url-input <<<"${VALUE}")
+    LINE=$1
+    KEY=${LINE%%=*}
+    VALUE=${LINE##*=}
+    VALUE=${VALUE%%#*}
+    QUERY[${KEY}]=$(nkf -w --url-input <<<"${VALUE}")
 }
 
 #
 # ### Get query
 #
 for i in $(tr '&' ' ' <<<"${QUERY_STRING}"); do
-	ParseQuery "${i}"
+    ParseQuery "${i}"
 done
 #
 # ### Post query
 #
 for i in $(cat - | tr '&' ' '); do
-	ParseQuery "${i}"
+    ParseQuery "${i}"
 done
+
+# Verifycation
+# PASSWORD_FILE="/home/$(users)/apache_password.txt"
+# if [[ ! -f "${PASSWORD_FILE}" ]]; then
+#     echo "Failed!"
+#     exit
+# fi
+# PASSWORD=$(cat "${PASSWORD_FILE}")
+# if [[ "${QUERY[username]}" != "$(users)" || "${PASSWORD}" == "${INVALID}" ]]; then
+#     echo "Failed!"
+#     exit
+# fi
+# if [[ "${QUERY[password]}" != "${PASSWORD}" ]]; then
+#     echo "Failed!"
+#     exit
+# fi
 
 # ## For Security
 #
@@ -338,13 +354,13 @@ done
 QUERY["cp"]="${QUERY[cp]//—//}"
 
 function SetDefaultOption() {
-	[[ "${QUERY[mode]}" = "" ]] && QUERY["mode"]="default"
-	[[ "${QUERY[view_mode]}" != "dual" ]] && [[ "${QUERY[view_mode]}" != "single" ]] && QUERY["view_mode"]="dual"
-	[[ "${QUERY[page]}" = "" ]] || [[ "${QUERY[page]}" -le 0 ]] && QUERY["page"]=1
-	[[ "${QUERY[percent]}" = "" ]] && QUERY["percent"]="80"
-	[[ "${QUERY[order]}" = "" ]] && QUERY["order"]="rl"
-	[[ "${QUERY[w_pix]}" = "" ]] && QUERY["w_pix"]=800
-	[[ "${QUERY[quality]}" = "" ]] && QUERY["quality"]=20
+    [[ "${QUERY[mode]}" = "" ]] && QUERY["mode"]="default"
+    [[ "${QUERY[view_mode]}" != "dual" ]] && [[ "${QUERY[view_mode]}" != "single" ]] && QUERY["view_mode"]="dual"
+    [[ "${QUERY[page]}" = "" ]] || [[ "${QUERY[page]}" -le 0 ]] && QUERY["page"]=1
+    [[ "${QUERY[percent]}" = "" ]] && QUERY["percent"]="80"
+    [[ "${QUERY[order]}" = "" ]] && QUERY["order"]="rl"
+    [[ "${QUERY[w_pix]}" = "" ]] && QUERY["w_pix"]=800
+    [[ "${QUERY[quality]}" = "" ]] && QUERY["quality"]=20
 }
 
 SetDefaultOption
@@ -357,72 +373,72 @@ CURRENT_PATH=${QUERY[cp]%/}
 ###################
 
 function PushUpLinkNum() {
-	QUERY["uplink"]=${QUERY["uplink"]}_${1}
+    QUERY["uplink"]=${QUERY["uplink"]}_${1}
 }
 
 function PopUpLinkNum() {
-	QUERY["uplink"]="${QUERY[uplink]%_*}"
+    QUERY["uplink"]="${QUERY[uplink]%_*}"
 }
 
 function BackLink() {
-	if [[ "${QUERY[keyword]}" = "" ]]; then
-		UpLink
-	else
-		SearchBackLink
-	fi
+    if [[ "${QUERY[keyword]}" = "" ]]; then
+        UpLink
+    else
+        SearchBackLink
+    fi
 }
 
 function UpLink() {
-	local UPLINK_NUM
-	local CURRENT_PATH
-	UPLINK_NUM="${QUERY[uplink]##*_}"
-	local HASH
-	HASH=""
-	if [[ "${UPLINK_NUM}" != "" ]]; then
-		HASH="#${UPLINK_NUM}"
-	fi
-	PopUpLinkNum
-	local CURRENT_PATH
-	CURRENT_PATH=${QUERY[cp]}
-	QUERY["cp"]="${QUERY[cp]%/*}"
-	local KEYWORD=${QUERY["keyword"]}
-	unset QUERY["keyword"]
-	echo -n "<span><a href=\"$(QueryLink)${HASH}\">../</a></span>"
-	PushUpLinkNum "${UPLINK_NUM}"
-	QUERY["cp"]=${CURRENT_PATH}
-	QUERY["keyword"]=${KEYWORD}
+    local UPLINK_NUM
+    local CURRENT_PATH
+    UPLINK_NUM="${QUERY[uplink]##*_}"
+    local HASH
+    HASH=""
+    if [[ "${UPLINK_NUM}" != "" ]]; then
+        HASH="#${UPLINK_NUM}"
+    fi
+    PopUpLinkNum
+    local CURRENT_PATH
+    CURRENT_PATH=${QUERY[cp]}
+    QUERY["cp"]="${QUERY[cp]%/*}"
+    local KEYWORD=${QUERY["keyword"]}
+    unset QUERY["keyword"]
+    echo -n "<span><a href=\"$(QueryLink)${HASH}\">../</a></span>"
+    PushUpLinkNum "${UPLINK_NUM}"
+    QUERY["cp"]=${CURRENT_PATH}
+    QUERY["keyword"]=${KEYWORD}
 }
 
 function QueryLink() {
-	local LINK
-	LINK="$0?"
-	# QUERY["cp"]=$(echo "${QUERY[cp]}" | nkf -WwMQ | sed 's/=$//g' | tr '=' '%' | tr -d '\n')
-	QUERY["cp"]=$(printf '%b\n' "${QUERY[cp]//%/\\x}")
-	QUERY["cp"]="${QUERY[cp]//#/%23}"
-	QUERY["cp"]="${QUERY[cp]//&/%26}"
-	for KEY in "${!QUERY[@]}"; do
-		VALUE=${QUERY[${KEY}]}
-		LINK="${LINK}&${KEY}=${VALUE}"
-	done
-	echo "${LINK}"
+    local LINK
+    LINK="$0?"
+    # QUERY["cp"]=$(echo "${QUERY[cp]}" | nkf -WwMQ | sed 's/=$//g' | tr '=' '%' | tr -d '\n')
+    QUERY["cp"]=$(printf '%b\n' "${QUERY[cp]//%/\\x}")
+    QUERY["cp"]="${QUERY[cp]//#/%23}"
+    QUERY["cp"]="${QUERY[cp]//&/%26}"
+    for KEY in "${!QUERY[@]}"; do
+        VALUE=${QUERY[${KEY}]}
+        LINK="${LINK}&${KEY}=${VALUE}"
+    done
+    echo "${LINK}"
 }
 
 function UrlPath() {
-	echo "${@/\/home\//\/\~}" | sed -e 's/#/%23/g' | sed -e 's/&/%26/g'
+    echo "${@/\/home\//\/\~}" | sed -e 's/#/%23/g' | sed -e 's/&/%26/g'
 }
 
 # ## Trash functions
 #
 
 function TrashCommand() {
-	if [[ "${DISABLE_TRASH}" != "true" ]]; then
-		FILE="$1"
-		if [[ -f "${FILE}" ]]; then
-			env XDG_DATA_HOME="/home/$(whoami)/.local/share/" trash "${FILE}"
-		else
-			echo -n "<p>${FILE} is not exist.</p><p>Trash failed.</p>"
-		fi
-	fi
+    if [[ "${DISABLE_TRASH}" != "true" ]]; then
+        FILE="$1"
+        if [[ -f "${FILE}" ]]; then
+            env XDG_DATA_HOME="/home/$(whoami)/.local/share/" trash "${FILE}"
+        else
+            echo -n "<p>${FILE} is not exist.</p><p>Trash failed.</p>"
+        fi
+    fi
 }
 
 # File Browser
@@ -430,36 +446,36 @@ function TrashCommand() {
 ##############
 
 function FileBrowser() {
-	CURRENT_PATH=${QUERY[cp]}
-	# I want to add link in each folder separated by /
-	# /home/bob/hello/world.txt
-	#   link to each directory
-	
-	echo -n "<h2>${CURRENT_PATH}</h2>"
-	if [[ "${CURRENT_PATH}" != "${TOP_DIRECTORY}" ]]; then
-		BackLink
-		echo -n "<br>"
-	fi
-	Menu
-	COUNTER=0
+    CURRENT_PATH=${QUERY[cp]}
+    # I want to add link in each folder separated by /
+    # /home/bob/hello/world.txt
+    #   link to each directory
 
-	echo -n "<div><ul>"
-	for t in "d" "f"; do
-		# if you pipe this.
-		# sub process  is created,
-		# thus you cannot update COUNTER.
-		while read -r i; do
-			QUERY["cp"]=${i}
-			NAME=$(basename "${i}")
-			[[ "${t}" == "d" ]] && NAME="${NAME}/"
-			PushUpLinkNum "${COUNTER}"
-			echo -e "<li><a id=\"${COUNTER}\" href=\"$(QueryLink)\">${NAME}</a></li>\n"
-			PopUpLinkNum
-			COUNTER=$((COUNTER + 1))
-		done < <(find -L "${CURRENT_PATH}" -mindepth 1 -maxdepth 1 -type "${t}" -not -name ".*" | sort -V)
-		echo -n "<hr>"
-	done
-	echo -n "</ul></div>"
+    echo -n "<h2>${CURRENT_PATH}</h2>"
+    if [[ "${CURRENT_PATH}" != "${TOP_DIRECTORY}" ]]; then
+        BackLink
+        echo -n "<br>"
+    fi
+    Menu
+    COUNTER=0
+
+    echo -n "<div><ul>"
+    for t in "d" "f"; do
+        # if you pipe this.
+        # sub process  is created,
+        # thus you cannot update COUNTER.
+        while read -r i; do
+            QUERY["cp"]=${i}
+            NAME=$(basename "${i}")
+            [[ "${t}" == "d" ]] && NAME="${NAME}/"
+            PushUpLinkNum "${COUNTER}"
+            echo -e "<li><a id=\"${COUNTER}\" href=\"$(QueryLink)\">${NAME}</a></li>\n"
+            PopUpLinkNum
+            COUNTER=$((COUNTER + 1))
+        done < <(find -L "${CURRENT_PATH}" -mindepth 1 -maxdepth 1 -type "${t}" -not -name ".*" | sort -V)
+        echo -n "<hr>"
+    done
+    echo -n "</ul></div>"
 }
 
 #
@@ -468,383 +484,383 @@ function FileBrowser() {
 #
 
 function MoveFileLink() {
-	local TMP=${QUERY["mode"]}
-	QUERY["mode"]="move_ask"
-	QUERY["move"]=$1
-	echo -n "<a href=\"$(QueryLink)\">$(basename "${1}")</a>"
-	unset QUERY["move"]
-	QUERY["mode"]="${TMP}"
+    local TMP=${QUERY["mode"]}
+    QUERY["mode"]="move_ask"
+    QUERY["move"]=$1
+    echo -n "<a href=\"$(QueryLink)\">$(basename "${1}")</a>"
+    unset QUERY["move"]
+    QUERY["mode"]="${TMP}"
 }
 
 function MoveLinks() {
-	echo -n "<table width=100%><tr><td>Move to:</td>"
-	for NAME in "${MOVE_DIRS[@]}"; do
-		if [[ "${NAME}" = "" ]]; then
-			echo -n "</tr><tr></tr><tr><td>Move to :</td>"
-			continue
-		fi
-		echo -n "<td>$(MoveFileLink "${NAME}")</td>"
-	done
-	echo -n "</tr></table>"
+    echo -n "<table width=100%><tr><td>Move to:</td>"
+    for NAME in "${MOVE_DIRS[@]}"; do
+        if [[ "${NAME}" = "" ]]; then
+            echo -n "</tr><tr></tr><tr><td>Move to :</td>"
+            continue
+        fi
+        echo -n "<td>$(MoveFileLink "${NAME}")</td>"
+    done
+    echo -n "</tr></table>"
 }
 
 function AppendToHistory() {
-	LINK=$1
-	if [[ "$(tail -n 1 "${FBVVWB_MANGA_HISTORY}")" != "${LINK}" ]]; then
-		echo "${LINK}" >>"${FBVVWB_MANGA_HISTORY}"
-	fi
+    LINK=$1
+    if [[ "$(tail -n 1 "${FBVVWB_MANGA_HISTORY}")" != "${LINK}" ]]; then
+        echo "${LINK}" >>"${FBVVWB_MANGA_HISTORY}"
+    fi
 }
 
 function CreateArcImgIdPath() {
-	if [[ ! -e "${FBVVWB_IMG_LIST}" ]] || [[ $(head -n 1 "${FBVVWB_IMG_LIST}") != "${CURRENT_PATH}" ]]; then
-		AppendToHistory "${CURRENT_PATH}"
-		echo -e "unar\n${CURRENT_PATH}" >"${FBVVWB_IMG_LIST}"
-		lsar "${CURRENT_PATH}" | grep -i -n -e ".jpg" -e ".jpeg" -e ".png" -e ".bmp" | sort -V -k2 -t ":" >>"${FBVVWB_IMG_LIST}"
-	fi
+    if [[ ! -e "${FBVVWB_IMG_LIST}" ]] || [[ $(head -n 1 "${FBVVWB_IMG_LIST}") != "${CURRENT_PATH}" ]]; then
+        AppendToHistory "${CURRENT_PATH}"
+        echo -e "unar\n${CURRENT_PATH}" >"${FBVVWB_IMG_LIST}"
+        lsar "${CURRENT_PATH}" | grep -i -n -e ".jpg" -e ".jpeg" -e ".png" -e ".bmp" | sort -V -k2 -t ":" >>"${FBVVWB_IMG_LIST}"
+    fi
 }
 
 function CreateDirImgIdPath() {
-	C_DIR="${CURRENT_PATH}"
-	if [[ -f "${CURRENT_PATH}" ]]; then
-		C_DIR=${CURRENT_PATH%\/*}
-	elif [[ -d "${CURRENT_PATH}" ]]; then
-		C_DIR=${CURRENT_PATH}
-	else
-		return
-	fi
-	DIR=$(head -n 1 "${FBVVWB_IMG_LIST}")
-	if [[ ! -e "${FBVVWB_IMG_LIST}" ]] || [[ "${DIR}" != "${C_DIR}" ]]; then
-		echo -e "img\n${C_DIR}" >"${FBVVWB_IMG_LIST}"
-		find -L "${C_DIR}" -type f -mindepth 1 -maxdepth 1 -not -name ".*" | grep -n -i -e ".jpg" -e ".jpeg" -e ".png" -e ".gif" -e ".bmp" | sort -V -k2 -t':' >>"${FBVVWB_IMG_LIST}"
-	fi
-	PAGE=$(grep -n "${CURRENT_PATH}" "${FBVVWB_IMG_LIST}" | cut -d':' -f1)
-	# Because, first line is directory name.
-	PAGE=$((PAGE - 2))
-	QUERY["page"]=${PAGE}
+    C_DIR="${CURRENT_PATH}"
+    if [[ -f "${CURRENT_PATH}" ]]; then
+        C_DIR=${CURRENT_PATH%\/*}
+    elif [[ -d "${CURRENT_PATH}" ]]; then
+        C_DIR=${CURRENT_PATH}
+    else
+        return
+    fi
+    DIR=$(head -n 1 "${FBVVWB_IMG_LIST}")
+    if [[ ! -e "${FBVVWB_IMG_LIST}" ]] || [[ "${DIR}" != "${C_DIR}" ]]; then
+        echo -e "img\n${C_DIR}" >"${FBVVWB_IMG_LIST}"
+        find -L "${C_DIR}" -type f -mindepth 1 -maxdepth 1 -not -name ".*" | grep -n -i -e ".jpg" -e ".jpeg" -e ".png" -e ".gif" -e ".bmp" | sort -V -k2 -t':' >>"${FBVVWB_IMG_LIST}"
+    fi
+    PAGE=$(grep -n "${CURRENT_PATH}" "${FBVVWB_IMG_LIST}" | cut -d':' -f1)
+    # Because, first line is directory name.
+    PAGE=$((PAGE - 2))
+    QUERY["page"]=${PAGE}
 }
 
 function GetImgListMax() {
-	if [[ ${IMG_MAX} == "" ]]; then
-		IMG_MAX=$(($(wc -l "${FBVVWB_IMG_LIST}" | cut -d' ' -f1) - 2))
-	fi
-	echo "${IMG_MAX}"
+    if [[ ${IMG_MAX} == "" ]]; then
+        IMG_MAX=$(($(wc -l "${FBVVWB_IMG_LIST}" | cut -d' ' -f1) - 2))
+    fi
+    echo "${IMG_MAX}"
 }
 
 function GetImgIdPath() {
-	local PAGE=$1
-	head -n $((PAGE + 2)) "${FBVVWB_IMG_LIST}" | tail -n 1
+    local PAGE=$1
+    head -n $((PAGE + 2)) "${FBVVWB_IMG_LIST}" | tail -n 1
 }
 
 function GetImgPath() {
-	local PAGE=$1
-	local NUM=$2
-	local IMG_NAME
-	local IMG_PATH
-	local IMG_ID_PATH
-	local IMG_ID
+    local PAGE=$1
+    local NUM=$2
+    local IMG_NAME
+    local IMG_PATH
+    local IMG_ID_PATH
+    local IMG_ID
 
-	TARGET="$(head -n 2 "${FBVVWB_IMG_LIST}" | tail -n 1)"
+    TARGET="$(head -n 2 "${FBVVWB_IMG_LIST}" | tail -n 1)"
 
-	case "$(head -n 1 "${FBVVWB_IMG_LIST}")" in
-	unar)
-		IMG_ID_PATH=$(GetImgIdPath "${PAGE}")
-		IMG_ID=$(cut -d':' -f1 <<<"${IMG_ID_PATH}")
-		IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
-		EXT=${IMG_PATH##*.}
-		IMG_NAME="$(mktemp -p "${FBVVWB_IMG_DIRECTORY}" --suffix=".${EXT}")"
-		chmod a+r "${IMG_NAME}"
-		IMG_ID=$((IMG_ID - 2))
-		unar "${TARGET}" -i "${IMG_ID}" -q -o - >"${IMG_NAME}"
-		convert -resize "${QUERY[w_pix]}x>" -quality "${QUERY[quality]}%" "${IMG_NAME}" "${IMG_NAME}.jpg"
-		echo "${IMG_NAME}.jpg"
-		;;
-	pdf)
-		local TMP="${FBVVWB_DIRECTORY}/img_tmp"
-		EXT="png"
-		pdftoppm -png -f "${PAGE}" -l "${PAGE}" "${TARGET}" "${TMP}" 2>&1
-		IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.${EXT}"
-		mv "${TMP}-${PAGE}.${EXT}" "${IMG_NAME}"
-		echo "${IMG_NAME}"
-		;;
-	img)
-		IMG_ID_PATH=$(GetImgIdPath "${PAGE}")
-		IMG_ID=$(cut -d':' -f1 <<<"${IMG_ID_PATH}")
-		IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
-		echo "${IMG_PATH}"
-		;;
-	*) ;;
+    case "$(head -n 1 "${FBVVWB_IMG_LIST}")" in
+    unar)
+        IMG_ID_PATH=$(GetImgIdPath "${PAGE}")
+        IMG_ID=$(cut -d':' -f1 <<<"${IMG_ID_PATH}")
+        IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
+        EXT=${IMG_PATH##*.}
+        IMG_NAME="$(mktemp -p "${FBVVWB_IMG_DIRECTORY}" --suffix=".${EXT}")"
+        chmod a+r "${IMG_NAME}"
+        IMG_ID=$((IMG_ID - 2))
+        unar "${TARGET}" -i "${IMG_ID}" -q -o - >"${IMG_NAME}"
+        convert -resize "${QUERY[w_pix]}x>" -quality "${QUERY[quality]}%" "${IMG_NAME}" "${IMG_NAME}.jpg"
+        echo "${IMG_NAME}.jpg"
+        ;;
+    pdf)
+        local TMP="${FBVVWB_DIRECTORY}/img_tmp"
+        EXT="png"
+        pdftoppm -png -f "${PAGE}" -l "${PAGE}" "${TARGET}" "${TMP}" 2>&1
+        IMG_NAME="${FBVVWB_DIRECTORY}/img_${NUM}.${EXT}"
+        mv "${TMP}-${PAGE}.${EXT}" "${IMG_NAME}"
+        echo "${IMG_NAME}"
+        ;;
+    img)
+        IMG_ID_PATH=$(GetImgIdPath "${PAGE}")
+        IMG_ID=$(cut -d':' -f1 <<<"${IMG_ID_PATH}")
+        IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
+        echo "${IMG_PATH}"
+        ;;
+    *) ;;
 
-	esac
+    esac
 }
 
 function PageLink() {
-	local PAGE=$1
-	local NAME=$2
-	local CURRENT_PATH
-	if [[ "${PAGE}" -ge 1 ]] && [[ "${PAGE}" -le "$(GetImgListMax)" ]]; then
-		TMP=${QUERY["page"]}
-		QUERY["page"]=${PAGE}
-		if [[ "${QUERY[mode]}" = "image_viewer" ]]; then
-			CURRENT_PATH=${QUERY["cp"]}
-			#IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
-			IMG_PATH=$(GetImgPath "${PAGE}" "0")
-			QUERY["cp"]=${IMG_PATH}
-		fi
-		echo -n "<a href=\"$(QueryLink)\">${NAME}</a>"
-		QUERY["page"]=$TMP
-		if [[ "${QUERY[mode]}" = "image_viewer" ]]; then
-			QUERY["cp"]=${CURRENT_PATH}
-		fi
-	else
-		echo -n "${NAME}"
-	fi
+    local PAGE=$1
+    local NAME=$2
+    local CURRENT_PATH
+    if [[ "${PAGE}" -ge 1 ]] && [[ "${PAGE}" -le "$(GetImgListMax)" ]]; then
+        TMP=${QUERY["page"]}
+        QUERY["page"]=${PAGE}
+        if [[ "${QUERY[mode]}" = "image_viewer" ]]; then
+            CURRENT_PATH=${QUERY["cp"]}
+            #IMG_PATH=$(cut -d':' -f2 <<<"${IMG_ID_PATH}")
+            IMG_PATH=$(GetImgPath "${PAGE}" "0")
+            QUERY["cp"]=${IMG_PATH}
+        fi
+        echo -n "<a href=\"$(QueryLink)\">${NAME}</a>"
+        QUERY["page"]=$TMP
+        if [[ "${QUERY[mode]}" = "image_viewer" ]]; then
+            QUERY["cp"]=${CURRENT_PATH}
+        fi
+    else
+        echo -n "${NAME}"
+    fi
 }
 
 function HeadLink() {
-	if [[ "${QUERY[page]}" -ne 1 ]]; then
-		PageLink "1" "Head"
-	else
-		echo -n "Head"
-	fi
+    if [[ "${QUERY[page]}" -ne 1 ]]; then
+        PageLink "1" "Head"
+    else
+        echo -n "Head"
+    fi
 }
 
 function TailLink() {
-	local PAGE
-	PAGE=$(GetImgListMax)
-	if [[ "${QUERY[view_mode]}" = "dual" ]]; then
-		OFFSET=1
-	else
-		OFFSET=0
-	fi
-	if [[ $((QUERY[page] + OFFSET)) -le ${PAGE} ]]; then
-		PageLink "${PAGE}" "Tail"
-	else
-		echo "Tail"
-	fi
+    local PAGE
+    PAGE=$(GetImgListMax)
+    if [[ "${QUERY[view_mode]}" = "dual" ]]; then
+        OFFSET=1
+    else
+        OFFSET=0
+    fi
+    if [[ $((QUERY[page] + OFFSET)) -le ${PAGE} ]]; then
+        PageLink "${PAGE}" "Tail"
+    else
+        echo "Tail"
+    fi
 }
 
 function JumpLink() {
-	local OFFSET=$1
-	PageLink "$((QUERY[page] + OFFSET))" "${OFFSET}"
+    local OFFSET=$1
+    PageLink "$((QUERY[page] + OFFSET))" "${OFFSET}"
 }
 
 function NextLink() {
-	#local PLACE=$1
-	#echo -n "<span style=\"float:${PLACE}\">"
-	if [[ "${QUERY[view_mode]}" = "dual" ]]; then
-		OFFSET=2
-	else
-		OFFSET=1
-	fi
-	PageLink "$((QUERY[page] + OFFSET))" "Next"
-	#echo -n "</span>"
+    #local PLACE=$1
+    #echo -n "<span style=\"float:${PLACE}\">"
+    if [[ "${QUERY[view_mode]}" = "dual" ]]; then
+        OFFSET=2
+    else
+        OFFSET=1
+    fi
+    PageLink "$((QUERY[page] + OFFSET))" "Next"
+    #echo -n "</span>"
 }
 
 function PrevLink() {
-	#local PLACE=$1
-	#echo -n "<span style=\"float:${PLACE}\">"
-	if [[ "${QUERY[view_mode]}" = "dual" ]]; then
-		OFFSET=2
-	else
-		OFFSET=1
-	fi
-	PageLink "$((QUERY[page] - OFFSET))" "Prev"
-	#echo -n "</span>"
+    #local PLACE=$1
+    #echo -n "<span style=\"float:${PLACE}\">"
+    if [[ "${QUERY[view_mode]}" = "dual" ]]; then
+        OFFSET=2
+    else
+        OFFSET=1
+    fi
+    PageLink "$((QUERY[page] - OFFSET))" "Prev"
+    #echo -n "</span>"
 }
 
 function PercentChange() {
-	local OFFSET=$1
-	local PLACE=$2
-	local PERCENT
-	PERCENT=$((QUERY[percent] + OFFSET))
-	if [[ "${PERCENT}" -ge 0 ]]; then
-		local SAVE_PERCENT
-		SAVE_PERCENT=${QUERY["percent"]}
-		QUERY["percent"]=${PERCENT}
-		echo -n "<a href=\"$(QueryLink)\">${OFFSET}%</a>"
-		QUERY["percent"]=${SAVE_PERCENT}
-	else
-		echo -n "${OFFSET}%"
-	fi
+    local OFFSET=$1
+    local PLACE=$2
+    local PERCENT
+    PERCENT=$((QUERY[percent] + OFFSET))
+    if [[ "${PERCENT}" -ge 0 ]]; then
+        local SAVE_PERCENT
+        SAVE_PERCENT=${QUERY["percent"]}
+        QUERY["percent"]=${PERCENT}
+        echo -n "<a href=\"$(QueryLink)\">${OFFSET}%</a>"
+        QUERY["percent"]=${SAVE_PERCENT}
+    else
+        echo -n "${OFFSET}%"
+    fi
 }
 
 function CreateCurrentPathFiles() {
-	DIR_NAME="$(dirname "${QUERY[cp]}")"
-	if [[ ! -e "${FBVVWB_CURRENT_DIR_FILES}" ]] || [[ "${DIR_NAME}" != $(head -n 1 "${FBVVWB_CURRENT_DIR_FILES}") ]]; then
-		echo "${DIR_NAME}" >"${FBVVWB_CURRENT_DIR_FILES}"
-		find -L "${DIR_NAME}" -mindepth 1 -maxdepth 1 -type f -not -name ".*" | sort -V >>"${FBVVWB_CURRENT_DIR_FILES}"
-	fi
+    DIR_NAME="$(dirname "${QUERY[cp]}")"
+    if [[ ! -e "${FBVVWB_CURRENT_DIR_FILES}" ]] || [[ "${DIR_NAME}" != $(head -n 1 "${FBVVWB_CURRENT_DIR_FILES}") ]]; then
+        echo "${DIR_NAME}" >"${FBVVWB_CURRENT_DIR_FILES}"
+        find -L "${DIR_NAME}" -mindepth 1 -maxdepth 1 -type f -not -name ".*" | sort -V >>"${FBVVWB_CURRENT_DIR_FILES}"
+    fi
 }
 
 function PrevArchiveLink() {
-	CreateCurrentPathFiles
-	if [[ ! -e "${FBVVWB_CURRENT_DIR_FILES}" ]]; then
-		echo "PreArc"
-		return
-	fi
-	TMP_CP=${QUERY["cp"]}
-	TMP_PAGE="${QUERY["page"]}"
+    CreateCurrentPathFiles
+    if [[ ! -e "${FBVVWB_CURRENT_DIR_FILES}" ]]; then
+        echo "PreArc"
+        return
+    fi
+    TMP_CP=${QUERY["cp"]}
+    TMP_PAGE="${QUERY["page"]}"
 
-	QUERY["page"]="0"
-	QUERY["cp"]=$(fgrep -B 1 "${QUERY[cp]}" "${FBVVWB_CURRENT_DIR_FILES}" | head -n 1)
-	local NAME
-	NAME="$(basename "${QUERY[cp]}")"
-	echo -n "<a href=\"$(QueryLink)\">PreArc(${NAME})</a>"
-	QUERY["page"]="${TMP_PAGE}"
-	QUERY["cp"]="${TMP_CP}"
+    QUERY["page"]="0"
+    QUERY["cp"]=$(fgrep -B 1 "${QUERY[cp]}" "${FBVVWB_CURRENT_DIR_FILES}" | head -n 1)
+    local NAME
+    NAME="$(basename "${QUERY[cp]}")"
+    echo -n "<a href=\"$(QueryLink)\">PreArc(${NAME})</a>"
+    QUERY["page"]="${TMP_PAGE}"
+    QUERY["cp"]="${TMP_CP}"
 }
 
 function NextArchiveLink() {
-	CreateCurrentPathFiles
-	if [[ ! -e "${FBVVWB_CURRENT_DIR_FILES}" ]]; then
-		echo "NexArc"
-		return
-	fi
-	TMP_CP=${QUERY["cp"]}
-	TMP_PAGE="${QUERY["page"]}"
+    CreateCurrentPathFiles
+    if [[ ! -e "${FBVVWB_CURRENT_DIR_FILES}" ]]; then
+        echo "NexArc"
+        return
+    fi
+    TMP_CP=${QUERY["cp"]}
+    TMP_PAGE="${QUERY["page"]}"
 
-	QUERY["page"]="0"
-	QUERY["cp"]=$(fgrep -A 1 "${QUERY[cp]}" "${FBVVWB_CURRENT_DIR_FILES}" | tail -n 1)
+    QUERY["page"]="0"
+    QUERY["cp"]=$(fgrep -A 1 "${QUERY[cp]}" "${FBVVWB_CURRENT_DIR_FILES}" | tail -n 1)
 
-	local NAME
-	NAME=$(basename "${QUERY[cp]}")
-	echo -n "<a href=\"$(QueryLink)\">NexArc(${NAME})</a>"
+    local NAME
+    NAME=$(basename "${QUERY[cp]}")
+    echo -n "<a href=\"$(QueryLink)\">NexArc(${NAME})</a>"
 
-	QUERY["page"]="${TMP_PAGE}"
-	QUERY["cp"]="${TMP_CP}"
+    QUERY["page"]="${TMP_PAGE}"
+    QUERY["cp"]="${TMP_CP}"
 }
 
 function AppendToBookmark() {
-	MODE="${QUERY[mode]}"
-	QUERY["mode"]="append_bookmark"
-	echo -n "<a href=\"$(QueryLink)\">Bookmark this page</a>"
-	QUERY["mode"]="${MODE}"
+    MODE="${QUERY[mode]}"
+    QUERY["mode"]="append_bookmark"
+    echo -n "<a href=\"$(QueryLink)\">Bookmark this page</a>"
+    QUERY["mode"]="${MODE}"
 }
 
 function NavigationBar() {
-	local NUM=5
-	NAV_BAR="<table width=100%><tr>"
-	if [[ "${QUERY[order]}" = "rl" ]]; then
-		NAV_BAR="${NAV_BAR}<td>$(NextLink "left")</td>"
-		for i in $(seq "${NUM}"); do
-			NAV_BAR="${NAV_BAR}<td>$(JumpLink "+$((2 ** i))")</td>"
-		done
-		NAV_BAR="${NAV_BAR}<td>$(TailLink)</td><td>(${QUERY[page]}/$(GetImgListMax))</td><td>$(HeadLink)</td>"
-		for i in $(seq "${NUM}" | tac); do
-			NAV_BAR="${NAV_BAR}<td>$(JumpLink "-$((2 ** i))")</td>"
-		done
-		NAV_BAR="${NAV_BAR}<td>$(PrevLink "right")</td>"
-	else
-		NAV_BAR="${NAV_BAR}<td>$(PrevLink "left")</td>"
-		for i in $(seq "${NUM}"); do
-			NAV_BAR="${NAV_BAR}<td>$(JumpLink "-$((2 ** i))")</td>"
-		done
-		NAV_BAR="${NAV_BAR}<td>$(HeadLink)</td><td>(${QUERY[page]}/$(GetImgListMax))</td><td>$(TailLink)</td>"
-		for i in $(seq "${NUM}" | tac); do
-			NAV_BAR="${NAV_BAR}<td>$(JumpLink "+$((2 ** i))")</td>"
-		done
-		NAV_BAR="${NAV_BAR}</td><td>$(NextLink "right")</td>"
-	fi
-	NAV_BAR="${NAV_BAR}</tr></table><table width=100%><tr>"
-	for i in "+1" "+5" "+10"; do
-		NAV_BAR="${NAV_BAR}<td>$(PercentChange "${i}")</td>"
-	done
-	local SAVE_PERCENT
-	SAVE_PERCENT=${QUERY["percent"]}
-	QUERY["percent"]="100"
-	NAV_BAR="${NAV_BAR}<td><a href=\"$(QueryLink)\">100%</a></td>"
-	QUERY["percent"]=${SAVE_PERCENT}
-	for i in "-10" "-5" "-1"; do
-		NAV_BAR="${NAV_BAR}<td>$(PercentChange "${i}")</td>"
-	done
-	NAV_BAR="${NAV_BAR}</tr></table>"
+    local NUM=5
+    NAV_BAR="<table width=100%><tr>"
+    if [[ "${QUERY[order]}" = "rl" ]]; then
+        NAV_BAR="${NAV_BAR}<td>$(NextLink "left")</td>"
+        for i in $(seq "${NUM}"); do
+            NAV_BAR="${NAV_BAR}<td>$(JumpLink "+$((2 ** i))")</td>"
+        done
+        NAV_BAR="${NAV_BAR}<td>$(TailLink)</td><td>(${QUERY[page]}/$(GetImgListMax))</td><td>$(HeadLink)</td>"
+        for i in $(seq "${NUM}" | tac); do
+            NAV_BAR="${NAV_BAR}<td>$(JumpLink "-$((2 ** i))")</td>"
+        done
+        NAV_BAR="${NAV_BAR}<td>$(PrevLink "right")</td>"
+    else
+        NAV_BAR="${NAV_BAR}<td>$(PrevLink "left")</td>"
+        for i in $(seq "${NUM}"); do
+            NAV_BAR="${NAV_BAR}<td>$(JumpLink "-$((2 ** i))")</td>"
+        done
+        NAV_BAR="${NAV_BAR}<td>$(HeadLink)</td><td>(${QUERY[page]}/$(GetImgListMax))</td><td>$(TailLink)</td>"
+        for i in $(seq "${NUM}" | tac); do
+            NAV_BAR="${NAV_BAR}<td>$(JumpLink "+$((2 ** i))")</td>"
+        done
+        NAV_BAR="${NAV_BAR}</td><td>$(NextLink "right")</td>"
+    fi
+    NAV_BAR="${NAV_BAR}</tr></table><table width=100%><tr>"
+    for i in "+1" "+5" "+10"; do
+        NAV_BAR="${NAV_BAR}<td>$(PercentChange "${i}")</td>"
+    done
+    local SAVE_PERCENT
+    SAVE_PERCENT=${QUERY["percent"]}
+    QUERY["percent"]="100"
+    NAV_BAR="${NAV_BAR}<td><a href=\"$(QueryLink)\">100%</a></td>"
+    QUERY["percent"]=${SAVE_PERCENT}
+    for i in "-10" "-5" "-1"; do
+        NAV_BAR="${NAV_BAR}<td>$(PercentChange "${i}")</td>"
+    done
+    NAV_BAR="${NAV_BAR}</tr></table>"
 
-	# For next and prev archive
-	NAV_BAR="${NAV_BAR}<table width=100%><tr> <td>$(PrevArchiveLink)</td> <td>$(AppendToBookmark)</td> <td>$(NextArchiveLink)</td> </tr></table>"
-	echo -n "${NAV_BAR}"
+    # For next and prev archive
+    NAV_BAR="${NAV_BAR}<table width=100%><tr> <td>$(PrevArchiveLink)</td> <td>$(AppendToBookmark)</td> <td>$(NextArchiveLink)</td> </tr></table>"
+    echo -n "${NAV_BAR}"
 }
 
 function ImgSrc() {
-	local PAGE=$1
-	local NUM=$2
-	local PERCENT=$3
+    local PAGE=$1
+    local NUM=$2
+    local PERCENT=$3
 
-	local IMG_PATH=$(GetImgPath "${PAGE}" "${NUM}")
-	echo "<!--  ${IMG_PATH}  -->"
-	echo "<img src=\"$(UrlPath "${IMG_PATH}")\" width=${PERCENT}%>"
+    local IMG_PATH=$(GetImgPath "${PAGE}" "${NUM}")
+    echo "<!--  ${IMG_PATH}  -->"
+    echo "<img src=\"$(UrlPath "${IMG_PATH}")\" width=${PERCENT}%>"
 }
 
 function ViewerSetting() {
-	local PAGE
-	PAGE=${QUERY["page"]}
-	if [[ "${QUERY[view_mode]}" == "dual" ]]; then
-		QUERY["page"]=$((PAGE - 1))
-		echo "<a href=\"$(QueryLink)\">Shift</a>"
-		QUERY["page"]=${PAGE}
-		ORDER=${QUERY["order"]}
-		if [[ "${QUERY[order]}" = "lr" ]]; then
-			QUERY["order"]="rl"
-			echo "<a href=\"$(QueryLink)\"><--</a>"
-		else
-			QUERY["order"]="lr"
-			echo "<a href=\"$(QueryLink)\">--></a>"
-		fi
-		QUERY["order"]=${ORDER}
-		QUERY["view_mode"]="single"
-		echo "<a href=\"$(QueryLink)\">Single Page</a>"
-		QUERY["view_mode"]="dual"
-	else
-		QUERY["view_mode"]="dual"
-		echo "<a href=\"$(QueryLink)\">Dual Page</a>"
-		QUERY["view_mode"]="single"
-	fi
+    local PAGE
+    PAGE=${QUERY["page"]}
+    if [[ "${QUERY[view_mode]}" == "dual" ]]; then
+        QUERY["page"]=$((PAGE - 1))
+        echo "<a href=\"$(QueryLink)\">Shift</a>"
+        QUERY["page"]=${PAGE}
+        ORDER=${QUERY["order"]}
+        if [[ "${QUERY[order]}" = "lr" ]]; then
+            QUERY["order"]="rl"
+            echo "<a href=\"$(QueryLink)\"><--</a>"
+        else
+            QUERY["order"]="lr"
+            echo "<a href=\"$(QueryLink)\">--></a>"
+        fi
+        QUERY["order"]=${ORDER}
+        QUERY["view_mode"]="single"
+        echo "<a href=\"$(QueryLink)\">Single Page</a>"
+        QUERY["view_mode"]="dual"
+    else
+        QUERY["view_mode"]="dual"
+        echo "<a href=\"$(QueryLink)\">Dual Page</a>"
+        QUERY["view_mode"]="single"
+    fi
 
 }
 
 function FileSize() {
-	local BYTE
-	BYTE=$(stat -c %s "${QUERY["cp"]}")
-	if [[ "${BYTE}" -le $((2 ** 10)) ]]; then
-		echo -n "${BYTE}[byte]"
-	elif [[ "${BYTE}" -le $((2 ** 20)) ]]; then
-		echo -n "$((BYTE / (2 ** 10))))[KB]"
-	elif [[ "${BYTE}" -le $((2 ** 30)) ]]; then
-		echo -n "$((BYTE / (2 ** 20)))[MB]"
-	else
-		echo -n "$((BYTE / (2 ** 30)))[GB]"
-	fi
+    local BYTE
+    BYTE=$(stat -c %s "${QUERY["cp"]}")
+    if [[ "${BYTE}" -le $((2 ** 10)) ]]; then
+        echo -n "${BYTE}[byte]"
+    elif [[ "${BYTE}" -le $((2 ** 20)) ]]; then
+        echo -n "$((BYTE / (2 ** 10))))[KB]"
+    elif [[ "${BYTE}" -le $((2 ** 30)) ]]; then
+        echo -n "$((BYTE / (2 ** 20)))[MB]"
+    else
+        echo -n "$((BYTE / (2 ** 30)))[GB]"
+    fi
 }
 
 function ImageViewer() {
-	PAGE="${QUERY[page]}"
-	if [[ "${PAGE}" -ge "$(GetImgListMax)" ]]; then
-		PAGE=$(GetImgListMax)
-		if [[ "${QUERY[view_mode]}" = "dual" ]]; then
-			PAGE=$((PAGE - 1))
-		fi
-	fi
+    PAGE="${QUERY[page]}"
+    if [[ "${PAGE}" -ge "$(GetImgListMax)" ]]; then
+        PAGE=$(GetImgListMax)
+        if [[ "${QUERY[view_mode]}" = "dual" ]]; then
+            PAGE=$((PAGE - 1))
+        fi
+    fi
 
-	PERCENT="${QUERY[percent]}"
+    PERCENT="${QUERY[percent]}"
 
-	echo "<div style=\"text-align:center\">"
-	if [[ "${QUERY[view_mode]}" = "dual" ]]; then
-		if [[ "${QUERY[order]}" = "rl" ]]; then
-			LIST="1 0"
-		else
-			LIST="0 1"
-		fi
-		PERCENT=$((PERCENT / 2))
-		for i in ${LIST}; do
-			IMG_SRC=$(ImgSrc "$((QUERY[page] + i))" "${i}" "${PERCENT}")
-			# 0 -> -2, 1 -> +2
-			PageLink "$((QUERY[page] + 2 * (2 * i - 1)))" "${IMG_SRC}"
-		done
-	else
-		echo "<!-- IV =  -->"
-		IMG_SRC=$(ImgSrc "${QUERY[page]}" "0" "${PERCENT}")
-		PageLink "$((QUERY[page] + 1))" "${IMG_SRC}"
-	fi
-	cat <<EOF
+    echo "<div style=\"text-align:center\">"
+    if [[ "${QUERY[view_mode]}" = "dual" ]]; then
+        if [[ "${QUERY[order]}" = "rl" ]]; then
+            LIST="1 0"
+        else
+            LIST="0 1"
+        fi
+        PERCENT=$((PERCENT / 2))
+        for i in ${LIST}; do
+            IMG_SRC=$(ImgSrc "$((QUERY[page] + i))" "${i}" "${PERCENT}")
+            # 0 -> -2, 1 -> +2
+            PageLink "$((QUERY[page] + 2 * (2 * i - 1)))" "${IMG_SRC}"
+        done
+    else
+        echo "<!-- IV =  -->"
+        IMG_SRC=$(ImgSrc "${QUERY[page]}" "0" "${PERCENT}")
+        PageLink "$((QUERY[page] + 1))" "${IMG_SRC}"
+    fi
+    cat <<EOF
 <br>
 $(NavigationBar)
 </div>
@@ -853,10 +869,10 @@ $(NavigationBar)
 $(ViewerSetting)
 <hr>
 EOF
-	# If you go to upper directory.
-	# page is reset to empty.
-	unset QUERY["page"]
-	cat <<EOF
+    # If you go to upper directory.
+    # page is reset to empty.
+    unset QUERY["page"]
+    cat <<EOF
 $(MoveLinks)
 <hr>
 ${QUERY[cp]}
@@ -870,7 +886,7 @@ EOF
 }
 
 function VideoPlayer() {
-	cat <<EOF
+    cat <<EOF
 $(basename "${QUERY[cp]}")<br>
 <div style="text-align:center">
 <video id="videoPlayer" width=100% muted controls autoplay playinline>
@@ -932,7 +948,7 @@ EOF
 }
 
 function AudioPlayer() {
-	cat <<EOF
+    cat <<EOF
 $(basename "${QUERY[cp]}")<br>
 <div style="text-align:center">
 <audio id="audioPlayer" style="width:100%" src="$(UrlPath "${QUERY[cp]}")" controls autoplay align="center"></audio>
@@ -1000,40 +1016,40 @@ EOF
 #
 
 function FileViewer() {
-	case "${CURRENT_PATH}" in
-	*.mp4 | *.avi | *.wmv | *.mkv)
-		VideoPlayer
-		;;
-	*.zip | *.rar | *.tar | *.tar.* | *.ZIP | *.cbz)
-		QUERY["mode"]="manga_viewer"
-		CreateArcImgIdPath
-		ImageViewer
-		;;
-	*.jpg | *.png | *.jpeg | *.gif | *.bmp)
-		CreateDirImgIdPath
-		QUERY["mode"]="image_viewer"
-		ImageViewer
-		;;
-	*.mp3 | *.flac | *.wav | *.m4a)
-		AudioPlayer
-		;;
-	*.pdf | *.PDF)
-		echo -e "pdf\n${CURRENT_PATH}" >"${FBVVWB_IMG_LIST}"
-		seq "$(pdfinfo "${CURRENT_PATH}" | grep "Pages" | tr -d ' ' | cut -d':' -f2)" >>"${FBVVWB_IMG_LIST}"
-		ImageViewer
-		;;
-	*\.txt | *\.TXT | *\.html | *\.md | *\.MD)
+    case "${CURRENT_PATH}" in
+    *.mp4 | *.avi | *.wmv | *.mkv)
+        VideoPlayer
+        ;;
+    *.zip | *.rar | *.tar | *.tar.* | *.ZIP | *.cbz)
+        QUERY["mode"]="manga_viewer"
+        CreateArcImgIdPath
+        ImageViewer
+        ;;
+    *.jpg | *.png | *.jpeg | *.gif | *.bmp)
+        CreateDirImgIdPath
+        QUERY["mode"]="image_viewer"
+        ImageViewer
+        ;;
+    *.mp3 | *.flac | *.wav | *.m4a)
+        AudioPlayer
+        ;;
+    *.pdf | *.PDF)
+        echo -e "pdf\n${CURRENT_PATH}" >"${FBVVWB_IMG_LIST}"
+        seq "$(pdfinfo "${CURRENT_PATH}" | grep "Pages" | tr -d ' ' | cut -d':' -f2)" >>"${FBVVWB_IMG_LIST}"
+        ImageViewer
+        ;;
+    *\.txt | *\.TXT | *\.html | *\.md | *\.MD)
 
-		echo "<pre>"
-		iconv -f $(nkf --guess "${CURRENT_PATH}") -t UTF8 "${CURRENT_PATH}"
-		echo "</pre>"
-		BackLink
-		;;
-	*)
-		echo "Yet implemented to open this file.<br>"
-		echo "${CURRENT_PATH}<br>$(BackLink)<br>$(Menu)"
-		;;
-	esac
+        echo "<pre>"
+        iconv -f $(nkf --guess "${CURRENT_PATH}") -t UTF8 "${CURRENT_PATH}"
+        echo "</pre>"
+        BackLink
+        ;;
+    *)
+        echo "Yet implemented to open this file.<br>"
+        echo "${CURRENT_PATH}<br>$(BackLink)<br>$(Menu)"
+        ;;
+    esac
 }
 
 #
@@ -1041,44 +1057,44 @@ function FileViewer() {
 # -----------
 #
 function Menu() {
-	QUERY["mode"]="search"
-	#<span style="float:left">
-	cat <<EOF
+    QUERY["mode"]="search"
+    #<span style="float:left">
+    cat <<EOF
 <span>
 <form style="display:inline" action="$(QueryLink)" method="post">
 <input type="text" name="keyword">
 <input type="submit" value="Search">
 </form>
 EOF
-	QUERY["mode"]=${MODE}
-	MODE=${QUERY["mode"]}
-	QUERY["mode"]="history"
-	echo "<a href=\"$(QueryLink)\">History</a>"
+    QUERY["mode"]=${MODE}
+    MODE=${QUERY["mode"]}
+    QUERY["mode"]="history"
+    echo "<a href=\"$(QueryLink)\">History</a>"
 
-	QUERY["mode"]=${MODE}
-	MODE=${QUERY["mode"]}
-	QUERY["mode"]="bookmark"
-	echo "<a href=\"$(QueryLink)\">Bookmark</a>"
+    QUERY["mode"]=${MODE}
+    MODE=${QUERY["mode"]}
+    QUERY["mode"]="bookmark"
+    echo "<a href=\"$(QueryLink)\">Bookmark</a>"
 
-	QUERY["mode"]="links"
-	KEYWORD=${QUERY["keyword"]}
-	unset QUERY["keyword"]
-	echo "<a href=\"$(QueryLink)\">Links</a>"
-	unset QUERY["mode"]
-	QUERY["keyword"]=${KEYWORD}
+    QUERY["mode"]="links"
+    KEYWORD=${QUERY["keyword"]}
+    unset QUERY["keyword"]
+    echo "<a href=\"$(QueryLink)\">Links</a>"
+    unset QUERY["mode"]
+    QUERY["keyword"]=${KEYWORD}
 
-	#
-	# You can add your own Menu Link.
-	# Add function name to MENU_LINKS in config file.
-	# See CreateConfig for more detail.
-	#
-	for NAME in "${MENU_LINKS[@]}"; do
-		if [[ "$(type -t "${NAME}")" = "function" ]]; then
-			# Create sub-process to prevent variable from changing.
-			echo "$(eval "${NAME}")"
-		fi
-	done
-	echo "</span>"
+    #
+    # You can add your own Menu Link.
+    # Add function name to MENU_LINKS in config file.
+    # See CreateConfig for more detail.
+    #
+    for NAME in "${MENU_LINKS[@]}"; do
+        if [[ "$(type -t "${NAME}")" = "function" ]]; then
+            # Create sub-process to prevent variable from changing.
+            echo "$(eval "${NAME}")"
+        fi
+    done
+    echo "</span>"
 }
 
 #
@@ -1086,17 +1102,17 @@ EOF
 # --------------
 #
 function History() {
-	echo "<h2>History</h2>"
-	BackLink
-	HIST="<ul>"
-	local COUNTER
-	COUNTER=0
-	while read -r line; do
-		QUERY["cp"]=${line}
-		HIST="${HIST}<li><a href=\"$(QueryLink)\">$(basename "${line}")</a></li>"
-	done < <(tac "${FBVVWB_MANGA_HISTORY}")
-	echo -n "${HIST}</ul>"
-	Menu
+    echo "<h2>History</h2>"
+    BackLink
+    HIST="<ul>"
+    local COUNTER
+    COUNTER=0
+    while read -r line; do
+        QUERY["cp"]=${line}
+        HIST="${HIST}<li><a href=\"$(QueryLink)\">$(basename "${line}")</a></li>"
+    done < <(tac "${FBVVWB_MANGA_HISTORY}")
+    echo -n "${HIST}</ul>"
+    Menu
 }
 
 #
@@ -1104,15 +1120,15 @@ function History() {
 # ---------------
 #
 function MoveDirLinks() {
-	echo "<h2>Links</h2>"
-	BackLink
-	DATA="<ul>"
-	for NAME in "${MOVE_DIRS[@]}"; do
-		QUERY["cp"]=${NAME}
-		DATA="${DATA}<li><a href=\"$(QueryLink)\">${NAME}</a></li>"
-	done
-	echo -n "${DATA}</ul>"
-	Menu
+    echo "<h2>Links</h2>"
+    BackLink
+    DATA="<ul>"
+    for NAME in "${MOVE_DIRS[@]}"; do
+        QUERY["cp"]=${NAME}
+        DATA="${DATA}<li><a href=\"$(QueryLink)\">${NAME}</a></li>"
+    done
+    echo -n "${DATA}</ul>"
+    Menu
 }
 
 #
@@ -1120,38 +1136,38 @@ function MoveDirLinks() {
 # --------------
 #
 function Search() {
-	unset QUERY["mode"]
-	echo "<h2>Search results</h2>"
-	Menu
-	KEYWORD=$(sed -e "s/+/ /g" <<<${QUERY["keyword"]})
-	if [[ "${KEYWORD}" == "" ]]; then
-		BackLink
-		return
-	fi
-	cat <<EOF
+    unset QUERY["mode"]
+    echo "<h2>Search results</h2>"
+    Menu
+    KEYWORD=$(sed -e "s/+/ /g" <<<${QUERY["keyword"]})
+    if [[ "${KEYWORD}" == "" ]]; then
+        BackLink
+        return
+    fi
+    cat <<EOF
 Keyword:${KEYWORD}
 <br>$(BackLink)<br>
 EOF
-	echo "<ul>"
-	if [[ ! -e "${FBVVWB_SEARCH_LIST}" ]] || [[ "$(head -n 1 "${FBVVWB_SEARCH_LIST}")" != "${KEYWORD}" ]]; then
-		echo "${KEYWORD}" >"${FBVVWB_SEARCH_LIST}"
-		locate -i "${KEYWORD}" >>"${FBVVWB_SEARCH_LIST}"
-	fi
-	while read -r line; do
-		QUERY["cp"]=${line}
-		echo "<li><a href=\"$(QueryLink)\">${line}</a></li>"
-	done < <(tail -n +2 "${FBVVWB_SEARCH_LIST}")
-	echo "</ul>"
+    echo "<ul>"
+    if [[ ! -e "${FBVVWB_SEARCH_LIST}" ]] || [[ "$(head -n 1 "${FBVVWB_SEARCH_LIST}")" != "${KEYWORD}" ]]; then
+        echo "${KEYWORD}" >"${FBVVWB_SEARCH_LIST}"
+        locate -i "${KEYWORD}" >>"${FBVVWB_SEARCH_LIST}"
+    fi
+    while read -r line; do
+        QUERY["cp"]=${line}
+        echo "<li><a href=\"$(QueryLink)\">${line}</a></li>"
+    done < <(tail -n +2 "${FBVVWB_SEARCH_LIST}")
+    echo "</ul>"
 }
 
 function SearchBackLink() {
-	QUERY["mode"]="search"
-	cat <<EOF
+    QUERY["mode"]="search"
+    cat <<EOF
 <span style="float:left">"
 <a href="$(QueryLink)">Back</a>"
 </span>"
 EOF
-	unset QUERY["mode"]
+    unset QUERY["mode"]
 }
 
 #
@@ -1185,81 +1201,81 @@ EOF
 # Mode selecter for special page.
 case "${QUERY[mode]}" in
 history)
-	unset QUERY["mode"]
-	History
-	;;
+    unset QUERY["mode"]
+    History
+    ;;
 links)
-	unset QUERY["mode"]
-	unset QUERY["keyword"]
-	MoveDirLinks
-	;;
+    unset QUERY["mode"]
+    unset QUERY["keyword"]
+    MoveDirLinks
+    ;;
 append_bookmark)
-	echo "<div style=\"text-align:center\">"
-	echo "Append ${QUERY[cp]}, Page ${QUERY[page]} to Bookmark."
-	QUERY["mode"]="default"
-	LINK=$(QueryLink)
-	DATE=$(date +'%Y/%m/%d %H:%M:%S')
-	PAGE=$(sed -e 's/.*page=\([^\&]*\)\&.*/\1/' <<<"${LINK}")
-	NAME=$(sed -e 's/.*cp=\([^\&]*\)\&.*/\1/' <<<"${LINK}")
-	sed -i "/${NAME}/d" "${FBVVWB_BOOKMARK}"
-	echo "${DATE},${NAME},${PAGE},${LINK}" >>"${FBVVWB_BOOKMARK}"
-	echo "<p>"
-	BackLink
-	Menu
-	echo "<p></div>"
-	;;
+    echo "<div style=\"text-align:center\">"
+    echo "Append ${QUERY[cp]}, Page ${QUERY[page]} to Bookmark."
+    QUERY["mode"]="default"
+    LINK=$(QueryLink)
+    DATE=$(date +'%Y/%m/%d %H:%M:%S')
+    PAGE=$(sed -e 's/.*page=\([^\&]*\)\&.*/\1/' <<<"${LINK}")
+    NAME=$(sed -e 's/.*cp=\([^\&]*\)\&.*/\1/' <<<"${LINK}")
+    sed -i "/${NAME}/d" "${FBVVWB_BOOKMARK}"
+    echo "${DATE},${NAME},${PAGE},${LINK}" >>"${FBVVWB_BOOKMARK}"
+    echo "<p>"
+    BackLink
+    Menu
+    echo "<p></div>"
+    ;;
 bookmark)
-	echo "<h2>Bookmark</h2>"
-	BackLink
-	echo "<br>"
-	Menu
-	echo "<ul>"
-	while IFS=, read -r DATE NAME PAGE LINK; do
-		echo "<li><a href=\"${LINK}\">${DATE}, Page${PAGE}, ${NAME}</a></li>"
-	done <<<"$(tac "${FBVVWB_BOOKMARK}")"
-	echo "</ul>"
-	;;
+    echo "<h2>Bookmark</h2>"
+    BackLink
+    echo "<br>"
+    Menu
+    echo "<ul>"
+    while IFS=, read -r DATE NAME PAGE LINK; do
+        echo "<li><a href=\"${LINK}\">${DATE}, Page${PAGE}, ${NAME}</a></li>"
+    done <<<"$(tac "${FBVVWB_BOOKMARK}")"
+    echo "</ul>"
+    ;;
 search)
-	Search
-	;;
+    Search
+    ;;
 move_ask)
-	echo "<div style=\"text-align:center\">"
-	BUTTON_NAME="Move"
-	if [[ "${QUERY[move]}" = "trash" ]]; then
-		echo -n "<p>Trash</p><p>${QUERY[cp]} "
-		FileSize
-		echo ".<p>"
-		BUTTON_NAME="Trash"
-	else
-		echo -n "<p>${QUERY[cp]} "
-		FileSize
-		"</p>"
-		echo -n "<p>|</p><p>V</p><p>${QUERY[move]}</p>"
-		echo -n "<p>Move $(basename "${QUERY[cp]}") to ${QUERY[move]} "
-		FileSize
-		echo -n "<p>"
-	fi
-	echo -n "<p>Are you sure?</p><table width=100%><tr><td>"
-	QUERY["mode"]='move'
-	echo -n "<a href=\"$(QueryLink)\">${BUTTON_NAME}</a></td><td>"
-	unset QUERY["mode"]
-	unset QUERY["move"]
-	echo -n "<a href=\"$(QueryLink)\">Cancel</a></td></tr></table></div>"
-	;;
+    echo "<div style=\"text-align:center\">"
+    BUTTON_NAME="Move"
+    if [[ "${QUERY[move]}" = "trash" ]]; then
+        echo -n "<p>Trash</p><p>${QUERY[cp]} "
+        FileSize
+        echo ".<p>"
+        BUTTON_NAME="Trash"
+    else
+        echo -n "<p>${QUERY[cp]} "
+        FileSize
+        "</p>"
+        echo -n "<p>|</p><p>V</p><p>${QUERY[move]}</p>"
+        echo -n "<p>Move $(basename "${QUERY[cp]}") to ${QUERY[move]} "
+        FileSize
+        echo -n "<p>"
+    fi
+    echo -n "<p>Are you sure?</p><table width=100%><tr><td>"
+    QUERY["mode"]='move'
+    echo -n "<a href=\"$(QueryLink)\">${BUTTON_NAME}</a></td><td>"
+    unset QUERY["mode"]
+    unset QUERY["move"]
+    echo -n "<a href=\"$(QueryLink)\">Cancel</a></td></tr></table></div>"
+    ;;
 move)
-	echo "<div style=\"text-align:center\">"
-	if [[ -d "${QUERY[move]}" ]]; then
-		echo -n "<p>mv ${QUERY[cp]} ${QUERY[move]}</p>"
-		mv "${QUERY[cp]}" "${QUERY[move]}"
-	elif [[ "${QUERY[move]}" = "trash" ]]; then
-		echo "<p>trash ${QUERY[cp]}</p>"
-		TrashCommand "${QUERY[cp]}"
-	else
-		echo "No such directory.<p>${QUERY[move]}</p><p>change config file.</p>"
-	fi
-	unset QUERY["mode"]
-	unset QUERY["move"]
-	cat <<EOF
+    echo "<div style=\"text-align:center\">"
+    if [[ -d "${QUERY[move]}" ]]; then
+        echo -n "<p>mv ${QUERY[cp]} ${QUERY[move]}</p>"
+        mv "${QUERY[cp]}" "${QUERY[move]}"
+    elif [[ "${QUERY[move]}" = "trash" ]]; then
+        echo "<p>trash ${QUERY[cp]}</p>"
+        TrashCommand "${QUERY[cp]}"
+    else
+        echo "No such directory.<p>${QUERY[move]}</p><p>change config file.</p>"
+    fi
+    unset QUERY["mode"]
+    unset QUERY["move"]
+    cat <<EOF
 <table width=100%><tr>
 <table width=100%><tr>
 <td> $(PrevArchiveLink) </td>
@@ -1269,14 +1285,14 @@ $(BackLink)
 $(Menu)
 </div>
 EOF
-	;;
+    ;;
 default | image_viewer | manga_viewer)
-	if [[ -d "${CURRENT_PATH}" ]]; then
-		FileBrowser
-	elif [[ -f "${CURRENT_PATH}" ]]; then
-		FileViewer
-	else
-		cat <<EOF
+    if [[ -d "${CURRENT_PATH}" ]]; then
+        FileBrowser
+    elif [[ -f "${CURRENT_PATH}" ]]; then
+        FileViewer
+    else
+        cat <<EOF
 -d -f failed<br>
 ${CURRENT_PATH}
 <p>
@@ -1289,11 +1305,11 @@ ${CURRENT_PATH}
 <p> $(BackLink) </p>
 $(Menu)
 EOF
-	fi
-	;;
+    fi
+    ;;
 *)
-	echo "No Such Mode. ${QUERY[mode]}"
-	;;
+    echo "No Such Mode. ${QUERY[mode]}"
+    ;;
 esac
 
 # print footer
