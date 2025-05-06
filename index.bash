@@ -361,7 +361,7 @@ function SetDefaultOption() {
     [[ "${QUERY[page]}" = "" ]] || [[ "${QUERY[page]}" -le 0 ]] && QUERY["page"]=1
     [[ "${QUERY[percent]}" = "" ]] && QUERY["percent"]="80"
     [[ "${QUERY[order]}" = "" ]] && QUERY["order"]="rl"
-    [[ "${QUERY[w_pix]}" = "" ]] && QUERY["w_pix"]=800
+    [[ "${QUERY[w_pix]}" = "" ]] && QUERY["w_pix"]=1000
     [[ "${QUERY[quality]}" = "" ]] && QUERY["quality"]=20
 }
 
@@ -704,7 +704,7 @@ function PrevArchiveLink() {
     TMP_PAGE="${QUERY["page"]}"
 
     QUERY["page"]="0"
-    QUERY["cp"]=$(fgrep -B 1 "${QUERY[cp]}" "${FBVVWB_CURRENT_DIR_FILES}" | head -n 1)
+    QUERY["cp"]=$(grep -B 1 "${QUERY[cp]}" "${FBVVWB_CURRENT_DIR_FILES}" | head -n 1)
     local NAME
     NAME="$(basename "${QUERY[cp]}")"
     echo -n "<a href=\"$(QueryLink)\">PreArc(${NAME})</a>"
@@ -722,7 +722,7 @@ function NextArchiveLink() {
     TMP_PAGE="${QUERY["page"]}"
 
     QUERY["page"]="0"
-    QUERY["cp"]=$(fgrep -A 1 "${QUERY[cp]}" "${FBVVWB_CURRENT_DIR_FILES}" | tail -n 1)
+    QUERY["cp"]=$(grep -A 1 "${QUERY[cp]}" "${FBVVWB_CURRENT_DIR_FILES}" | tail -n 1)
 
     local NAME
     NAME=$(basename "${QUERY[cp]}")
