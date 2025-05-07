@@ -56,9 +56,28 @@
 # - Bash
 # 	- grep, sed, cut, whoami, :,
 # - unar/lsar (for unarchiving)
-# - trash-cli
+# - trash (for trashing a file)
 # - iconv, nkf (for detecting and converting character set)
-# - locale (for searching file)
+# - locate (for searching file)
+# - convert (for image compression)
+
+function CheckCommands() {
+    NOT_EXISTS="false"
+    for cmd in grep sed cut whoami unar lsar trash iconv nkf locate convert; do
+        if ! command -v "${cmd}" >/dev/null 2>&1; then
+            echo "Command ${cmd} not found."
+            NOT_EXISTS="true"
+        fi
+    done
+    if [[ "${NOT_EXISTS}" == "true" ]]; then
+        exit
+    fi
+}
+if [[ $(CheckCommands) != "" ]]; then
+    echo "Some commands not found."
+    exit
+fi
+
 #
 # Security
 # --------
@@ -177,8 +196,11 @@ if [[ "$#" -ne 0 ]]; then
         --generate-readme | -g)
             bash "$0" -h >"README.md"
             ;;
-        -c)
+        -c|--config)
             PrintConfig
+            ;;
+        --check)
+            CheckCommand
             ;;
         *)
             echo "Such option do not allowed."
@@ -200,6 +222,9 @@ Content-Type: text/html
 <!-- If you run as bash, type Ctrl-D. -->
 EOF
 
+# ## Config
+#
+# FBVVWB uses these config directories and files.
 FBVVWB_CONFIG="/home/$(whoami)/.fbvvwb/config"
 
 function PrintConfig() {
