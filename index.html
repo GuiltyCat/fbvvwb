@@ -26,8 +26,13 @@
     <div style="text-align:center">
         <h1>Hello</h1>
         <form action="/cgi-bin/index.bash" method="post">
-            UserName:<input type="text" name="username"><br>
-            Password:<input type="password" name="password"><br>
+            <table align="center" style="font-size:30px">
+                <tr>
+                    <td>UserName</td><td>:<input type="text" name="username"></td>
+                </tr><tr>
+                    <td>Password</td><td>:<input type="password" name="password"></td>
+                </tr>
+            </table>
             <button type="submit">Login</button>
         </form>
     </div>
